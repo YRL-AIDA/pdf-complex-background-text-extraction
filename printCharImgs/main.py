@@ -2,22 +2,25 @@ import os
 import shutil
 from PIL import Image, ImageFont, ImageDraw
 from fontTools.ttLib import TTFont
-
+import configparser
+import string
 
 def font2png(fonts_folder, save_folder):
     img_height, img_width = 28, 28
-    directories = []
     fontsDir = "./" + fonts_folder + "/"
-    chars = get_all_chars_set(fontsDir)
+    # chars = get_all_chars_set(fontsDir)
+    config = configparser.ConfigParser()
+    config.read('config.ini', encoding='utf-8')
+    chars = config.get('DEFAULT', 'Symbols')
+    chars = set([n.strip() for n in chars])
 
-    # очистить папку
-    if os.path.isdir(save_folder):
-        shutil.rmtree(save_folder)
-    os.makedirs("./" + save_folder)
-    # создать папки
+    if os.path.isdir("./imgs/" + save_folder):
+        shutil.rmtree("./imgs/" + save_folder)
+    os.makedirs("./imgs/" + save_folder)
+
     for char in chars:
         name = symb2str(char)
-        os.makedirs("./" + save_folder + "/" + name)
+        os.makedirs("./imgs/" + save_folder + "/" + name)
 
     # for char in chars:
     #     name = symb2str(char)
@@ -36,8 +39,9 @@ def font2png(fonts_folder, save_folder):
     for fontFile in fontFiles:
         fontName = os.fsdecode(fontFile)
         font_chars = get_char_list_from_ttf(fontsDir + fontName)
-        # print(font_chars)
-        for char in font_chars:
+        for char in chars:
+            if char not in font_chars:
+                continue
             img = Image.new('L', (img_width, img_height))
             draw = ImageDraw.Draw(img)
             font = ImageFont.truetype(fontsDir + fontName, 16)
@@ -48,20 +52,17 @@ def font2png(fonts_folder, save_folder):
             if img.getbbox() is None:
                 continue
 
-            # folder_name = symb2str(char)
-            # if not os.path.isdir("./" + save_folder + "/" + folder_name):
-            #     os.makedirs("./" + save_folder + "/" + folder_name)
-
             imgName = symb2str(char) + "_" + str(counter) + ".png"
-            img.save("./" + save_folder + "/" + symb2str(char) + "/" + imgName)
+            img.save("./imgs/" + save_folder + "/" + symb2str(char) + "/" + imgName)
         counter += 1
-    remove_empty_folders(save_folder)
+    # remove_empty_folders(save_folder)
 
 
 def symb2str(char: str):
     invalid_symbols = {"/": "slash", "\\": "backslash", ":": "colon", "*": "asterisk", "?": "question",
                        "\"": "quotation", "<": "less", ">": "more", "|": "vertical", " ": "space", ".": "dot"}
-    return invalid_symbols[char] if char in invalid_symbols else char + "_lower" if char.islower() else char + "_upper"
+    # return invalid_symbols[char] if char in invalid_symbols else char + "_lower" if char.islower() else char + "_upper"
+    return invalid_symbols[char] if char in invalid_symbols else char + "_lower" if char.islower() else char + "_upper" if char.isupper() else char
 
 
 def get_all_chars_set(fonts_path):
@@ -96,14 +97,24 @@ def get_char_list_from_ttf(font_file):
 
 font2png("fontstest", "testimgs")
 font2png("fontstrain", "trainimgs")
-
-# ŕ есть у некоторых, но нет
-# что чًтًоً
-# print("ᾒ".encode().decode('utf8').islower())
-# print("ᾚ".encode().decode('utf8').islower())
-# ὼ Ὼ
+#
+# # что чًтًоً
 font2png("fontsvalidation", "validationimgs")
 
 
-# os.makedirs("Ὼ")
-# os.makedirs("ὼ")
+# font = TTFont("Regular.otf")
+# print('я' in font.getGlyphSet())
+# print(list(string.ascii_lowercase + string.ascii_uppercase + str([chr(i) for i in range(ord('а'), ord('я')+1)]) +
+#            str([chr(i) for i in range(ord('А'), ord('Я')+1)])))
+
+
+# l = list(string.ascii_lowercase + string.ascii_uppercase) + [chr(i) for i in range(ord('а'), ord("я")+1)]+ [chr(i) for i in range(ord('А'), ord("Я")+1)] + [chr(i) for i in range(ord('0'), ord("9")+1)]
+# # print(list(string.ascii_lowercase + string.ascii_uppercase) + [chr(i) for i in range(ord('а'), ord("я")+1)]
+# #       + [chr(i) for i in range(ord('А'), ord("Я")+1)])
+#
+# print(','.join(l + list(string.punctuation)))
+# config = configparser.ConfigParser()
+# config.read('config.ini', encoding='utf-8')
+# l = config.get('DEFAULT', 'Symbols')
+# l = set([n.strip() for n in l])
+# print(l)
