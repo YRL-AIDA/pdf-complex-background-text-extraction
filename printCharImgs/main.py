@@ -6,12 +6,13 @@ import configparser
 import Augmentor
 import extract_font
 
+config = configparser.ConfigParser()
+config.read('config.ini', encoding='utf-8')
+
 
 def font2png(fonts_folder, save_folder, testtrain=0):
     img_height, img_width = 28, 28
     fontsDir = "./" + fonts_folder + "/"
-    config = configparser.ConfigParser()
-    config.read('config.ini', encoding='utf-8')
     chars = config.get('DEFAULT', 'Symbols')
     chars = set([n.strip() for n in chars])
 
@@ -74,8 +75,6 @@ def font2png(fonts_folder, save_folder, testtrain=0):
 def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
     img_height, img_width = 28, 28
     fontsDir = "./" + fonts_folder + "/"
-    config = configparser.ConfigParser()
-    config.read('config.ini', encoding='utf-8')
     chars = config.get('DEFAULT', 'Symbols')
     chars = set([n.strip() for n in chars])
 
@@ -124,16 +123,12 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
 
 
 def symb2str(char: str):
-    invalid_symbols = {"/": "slash", "\\": "backslash", ":": "colon", "*": "asterisk", "?": "question", "™": "tm",
-                       "\"": "quotation", "<": "less", ">": "more", "|": "vertical", " ": "space", ".": "dot",
-                       "©": "copyright"}
+    invalid_symbols = eval(config.get("DEFAULT", "invalidSymbols"))
     return invalid_symbols[char] if char in invalid_symbols else char + "_lower" if char.islower() else char + "_upper" if char.isupper() else char
 
 
 def symb2strdir(char: str):
-    invalid_symbols = {"/": "slash", "\\": "backslash", ":": "colon", "*": "asterisk", "?": "question", "™": "tm",
-                       "\"": "quotation", "<": "less", ">": "more", "|": "vertical", " ": "space", ".": "dot",
-                       "©": "copyright"}
+    invalid_symbols = eval(config.get("DEFAULT", "invalidSymbols"))
     return invalid_symbols[char] if char in invalid_symbols else char
 
 
@@ -195,10 +190,10 @@ def aug_imgs(path, savefolder):
         p.sample(filesize(imgspath) * 3)
 
 
-# generateimgs("imgs/fontstrain", "trainimgs")
-# generateimgs("imgs/fontsvalidation", "validationimgs")
-# generateimgs("imgs/fontstest", "testimgs")
-# generateimgs("imgs/fontstrain", "testfromtrain", isTestFromTrain=True)
+generateimgs("imgs/trainimgs", "fontstrain")
+generateimgs("imgs/validationimgs", "fontsvalidation")
+generateimgs("imgs/testimgs", "fontstest")
+generateimgs("imgs/testfromtrain", "fontstrain", isTestFromTrain=True)
 
 # generateAugedImgs("imgs/trainimgs", "outputTrain")
 # generateAugedImgs("imgs/validationimgs", "outputVal")

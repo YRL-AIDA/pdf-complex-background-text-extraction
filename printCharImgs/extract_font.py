@@ -13,10 +13,6 @@ def extract_pfdfont(pdf_path, tosave="extracted_font"):
     for page_num in range(doc.page_count):
         page = doc.get_page_fonts(page_num)
         for fontinfo in page:
-
-            print(fontinfo)
-            print(fontinfo[0])
-            print("---")
             xref = fontinfo[0]
             if xref in xref_visited:
                 continue
