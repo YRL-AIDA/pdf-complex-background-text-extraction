@@ -2,3 +2,6 @@
 *.ttf
 *.otf
 *.zip
+*.pdf
+*.cff
+*.pyc

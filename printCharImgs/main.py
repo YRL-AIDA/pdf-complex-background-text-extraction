@@ -4,6 +4,7 @@ from PIL import Image, ImageFont, ImageDraw
 from fontTools.ttLib import TTFont
 import configparser
 import Augmentor
+import extract_font
 
 
 def font2png(fonts_folder, save_folder, testtrain=0):
@@ -164,8 +165,8 @@ def get_char_list_from_ttf(font_file):
     return char_list
 
 
-def generateimgs(imgsfolder, fontFolder, saveImgsFolder, isTestFromTrain = False):
-    font2png_noregdiff(fontFolder, imgsfolder + "/" + saveImgsFolder, isTestFromTrain)
+def generateimgs(save_imgs_folder, fontFolder, isTestFromTrain = False):
+    font2png_noregdiff(fontFolder, save_imgs_folder, isTestFromTrain)
 
 
 def generateAugedImgs(imgsfolder, augmentedSave):
@@ -194,12 +195,14 @@ def aug_imgs(path, savefolder):
         p.sample(filesize(imgspath) * 3)
 
 
-generateimgs("imgs", "fontstrain", "trainimgs")
-generateimgs("imgs", "fontsvalidation", "validationimgs")
-generateimgs("imgs", "fontstest", "testimgs")
-generateimgs("imgs", "fontstrain", "testfromtrain", isTestFromTrain=True)
+# generateimgs("imgs/fontstrain", "trainimgs")
+# generateimgs("imgs/fontsvalidation", "validationimgs")
+# generateimgs("imgs/fontstest", "testimgs")
+# generateimgs("imgs/fontstrain", "testfromtrain", isTestFromTrain=True)
 
-generateAugedImgs("imgs/trainimgs", "outputTrain")
-generateAugedImgs("imgs/validationimgs", "outputVal")
-generateAugedImgs("imgs/testimgs", "outputTest")
-generateAugedImgs("imgs/testtrainimgs", "outputTestTrain")
+# generateAugedImgs("imgs/trainimgs", "outputTrain")
+# generateAugedImgs("imgs/validationimgs", "outputVal")
+# generateAugedImgs("imgs/testimgs", "outputTest")
+# generateAugedImgs("imgs/testtrainimgs", "outputTestTrain")
+
+extract_font.extract_pfdfont("pdf/1.pdf")
