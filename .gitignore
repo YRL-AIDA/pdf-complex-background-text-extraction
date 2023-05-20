@@ -5,3 +5,5 @@
 *.pdf
 *.cff
 *.pyc
+printCharImgs/freetype/
+printCharImgs/.idea/misc.xml
