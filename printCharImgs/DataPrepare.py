@@ -11,6 +11,7 @@ import DrawGlyph
 import cv2
 import numpy as np
 from skimage.util import random_noise
+import ast
 
 config = configparser.ConfigParser()
 config.read('config.ini', encoding='utf-8')
@@ -21,8 +22,7 @@ punctuation = eval(config.get("DEFAULT", "punctuation"))
 invalid_symbols = eval(config.get("DEFAULT", "invalidSymbols"))
 chars = config.get('DEFAULT', 'Symbols')
 chars = set([n.strip() for n in chars])
-dontaug = config.get('DEFAULT', 'dont_aug')
-dontaug = set([n.strip() for n in chars])
+dontaug = ast.literal_eval(config.get("DEFAULT", "dont_aug"))
 
 
 def font2png(fonts_folder, save_folder, testtrain=0):
@@ -233,13 +233,14 @@ def aug_imgs(path, savefolder):
 
         imgspath = '/'.join([root])
         outputpath = ("../" * len(path.split('/'))) + savefolder + "/" + root.split('\\')[-1]
-        if root.split('\\')[-1] in [',', 'dot', '\'', '`', '_', '-', ';']:
+        # if root.split('\\')[-1] in [',', 'dot', '\'', '`', '_', '-', ';']:
+        if root.split('\\')[-1] in dontaug:
             copyto = imgspath.split('/')[0] + "/" + savefolder + "/" + root.split('\\')[-1]
             os.makedirs(copyto)
             shutil.copytree(imgspath, copyto, dirs_exist_ok=True)
-            print(root.split('\\')[-1])
             continue
-        elif root.split('\\')[-1] not in [',', '.', '\'', '`', '_', '-']:
+        # elif root.split('\\')[-1] not in [',', '.', '\'', '`', '_', '-']:
+        elif root.split('\\')[-1] not in dontaug:
             p = Augmentor.Pipeline(imgspath, outputpath)
             p.zoom(probability=0.3, min_factor=0.8, max_factor=1.3)
             p.random_distortion(probability=0.3, grid_width=4, grid_height=4, magnitude=1)
@@ -307,19 +308,21 @@ def font2png_noregdiff_fonttools(fonts_folder, save_folder, testtrain=False):
 def add_noise(path="imgs/outputTrain"):
     subfolders = glob.glob(path + "/*")
     for subfolder in subfolders:
-        if subfolder.split('\\')[-1] in ['dot', ',', 'quotedbl', '_', '`', '\'', '-']:
+        # if subfolder.split('\\')[-1] in ['dot', ',', 'quotedbl', '_', '`', '\'', '-']:
+        if subfolder.split('\\')[-1] in dontaug:
             continue
-        subfolderfiles = glob.glob(subfolder + "/*")
-        for imgpath in subfolderfiles:
-            img = cv2.imread(imgpath, 0)
-            img = random_noise(img, mode="s&p", clip=True)
-            cv2.imwrite(imgpath, 255*img)
+        elif subfolder.split('\\')[-1] not in dontaug:
+            subfolderfiles = glob.glob(subfolder + "/*")
+            for imgpath in subfolderfiles:
+                img = cv2.imread(imgpath, 0)
+                img = random_noise(img, mode="s&p", clip=True)
+                cv2.imwrite(imgpath, 255*img)
         # print(imgpath)
 
 def prepdata():
-    generateimgs("imgs/trainimgs", "fonts/fontstrain")
-    generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
-    generateimgs("imgs/testimgs", "fonts/fontstest")
-    generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
-    generateAugedImgs("imgs/trainimgs", "outputTrain")
+    # generateimgs("imgs/trainimgs", "fonts/fontstrain")
+    # generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
+    # generateimgs("imgs/testimgs", "fonts/fontstest")
+    # generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
+    # generateAugedImgs("imgs/trainimgs", "outputTrain")
     add_noise()
