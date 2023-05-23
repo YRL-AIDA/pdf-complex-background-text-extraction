@@ -1,21 +1,21 @@
 import configparser
 import glob
 import os
+import random
 import shutil
 
 import Augmentor
-from PIL import Image, ImageFont, ImageDraw, ImageOps
+from PIL import ImageFont
 from fontTools.ttLib import TTFont
-from fontTools.pens.freetypePen import FreeTypePen
-import DrawGlyph
 import cv2
-import numpy as np
 from skimage.util import random_noise
 import ast
+from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code
 
 config = configparser.ConfigParser()
-config.read('config.ini', encoding='utf-8')
-# align = eval(config.get("DEFAULT", "align"))
+config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+# config.read('config.ini', encoding='utf-8')
+config.read(config_p, encoding='utf-8')
 bottom_align = config.get("DEFAULT", "bottom_align")
 bottom_align = set([n.strip() for n in bottom_align])
 punctuation = eval(config.get("DEFAULT", "punctuation"))
@@ -26,66 +26,85 @@ dontaug = ast.literal_eval(config.get("DEFAULT", "dont_aug"))
 
 
 def font2png(fonts_folder, save_folder, testtrain=0):
-    img_height, img_width = 28, 28
+    img_width, img_height = 28, 28
     fontsDir = "./" + fonts_folder + "/"
 
-    if os.path.isdir("./imgs/" + save_folder):
-        shutil.rmtree("./imgs/" + save_folder)
-    os.makedirs("./imgs/" + save_folder)
+    if os.path.isdir(save_folder):
+        shutil.rmtree(save_folder)
+    os.makedirs(save_folder)
 
     for char in chars:
-        # if char.isupper():
-        #     continue
-
         name = symb2str(char)
-        os.makedirs("./imgs/" + save_folder + "/" + name)
+        os.makedirs(save_folder + "/" + name)
 
     counter = 0
     fontFiles = os.listdir(os.fsencode(fontsDir))
-    print(fontFiles)
     if testtrain == 1:
         fontFiles = fontFiles[:len(fontFiles) // 4]
 
     cnt = 0
-    # print(fontFiles)
     for fontFile in fontFiles:
         fontName = os.fsdecode(fontFile)
         print(cnt, fontName)
         cnt += 1
-
+        font = ImageFont.truetype(fontsDir + fontName, 28)
         font_chars = get_char_list_from_ttf(fontsDir + fontName)
+        # try:
+        #     ttfont = TTFont(fontsDir + fontName)
+        #     cmap = ttfont.getBestCmap()
+        #     glyphset = ttfont.getGlyphSet()
+        #     for char in chars:
+        #         if char not in font_chars:
+        #             continue
+        #
+        #         # img = Image.new('L', (img_width, img_height))
+        #         # draw = ImageDraw.Draw(img)
+        #         # font = ImageFont.truetype(fontsDir + fontName, 18)
+        #         # _, _, w, h = draw.textbbox((0, 0), char, font)
+        #         # draw.text(((img_width - w) / 2, (img_height - h) / 2), char, "white", font)
+        #         #
+        #         # # пустое изображение
+        #         # if img.getbbox() is None:
+        #         #     continue
+        #         if char.islower():
+        #             img1 = Image.Image()._new(font.getmask(char))
+        #             img2 = Image.Image()._new(font.getmask(char.upper()))
+        #             if img1 == img2:
+        #                 continue
+        #         img = drawglyph_bypen_and_code(cmap, glyphset, ord(char))
+        #         imgName = symb2str(char) + "_" + str(counter) + ".png"
+        #         img.save(save_folder + "/" + symb2str(char) + "/" + imgName)
+        #         # img = drawglyph_pillow(font, char, (img_width, img_height))
+        #         # if img is None:
+        #         #     continue
+        #         # imgName = symb2str(char) + "_" + str(counter) + ".png"
+        #         # img.save(save_folder + "/" + symb2str(char) + "/" + imgName)
+        #     counter += 1
+        # except Exception:
+        #     pass
         for char in chars:
             if char not in font_chars:
                 continue
-
-            # if char.isupper():
+            # img = Image.new('L', (img_width, img_height))
+            # draw = ImageDraw.Draw(img)
+            # font = ImageFont.truetype(fontsDir + fontName, 18)
+            # _, _, w, h = draw.textbbox((0, 0), char, font)
+            # draw.text(((img_width - w) / 2, (img_height - h) / 2), char, "white", font)
+            #
+            # # пустое изображение
+            # if img.getbbox() is None:
             #     continue
-
-            img = Image.new('L', (img_width, img_height))
-            draw = ImageDraw.Draw(img)
-            font = ImageFont.truetype(fontsDir + fontName, 18)
-            _, _, w, h = draw.textbbox((0, 0), char, font)
-            draw.text(((img_width - w) / 2, (img_height - h) / 2), char, "white", font)
-
-            # пустое изображение
-            if img.getbbox() is None:
+            img = drawglyph_pillow(font, char, (img_width, img_height))
+            if img is None:
                 continue
-            # if char == 'e':
-            #     img2 = Image.new('L', (img_width, img_height))
-            #     draw2 = ImageDraw.Draw(img2)
-            #     _, _, w2, h2 = draw.textbbox((0, 0), 'e', font)
-            #     draw2.text(((img_width - w) / 2, (img_height - h) / 2), 'E', "white", font)
-            #     if not ImageChops.difference(img,img2).getbbox():
-            #         print(fontName)
-
             imgName = symb2str(char) + "_" + str(counter) + ".png"
-            img.save("./imgs/" + save_folder + "/" + symb2str(char) + "/" + imgName)
+            img.save(save_folder + "/" + symb2str(char) + "/" + imgName)
         counter += 1
     # remove_empty_folders(save_folder)
 
 
 def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
-    img_height, img_width = 28, 28
+    img_width, img_height = 28, 28
     fontsDir = "./" + fonts_folder + "/"
 
     if os.path.isdir(save_folder):
@@ -111,10 +130,6 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
         cnt += 1
         # важно
         font = ImageFont.truetype(fontsDir + fontName, 28)
-        img1 = Image.new("L", (img_width, img_height))
-        draw1 = ImageDraw.Draw(img1)
-        _, _, w1, h1 = draw1.textbbox((0, 0), "□", font)
-        draw1.text(((img_width - w1) / 2, (img_height - h1) / 2), "□", "white", font)
 
         # важно
         font_chars = get_char_list_from_ttf(fontsDir + fontName)
@@ -134,7 +149,6 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
             #     img = Image.Image()._new(font.getmask(char))
             # else:
             #     img = Image.Image()._new(font.getmask(char))
-            imgName = symb2str(char) + "_" + str(counter) + ".png"
             # ttfont = TTFont(fontsDir + fontName)
             # if char in punctuation:
             #     try:
@@ -145,41 +159,28 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
             #             continue
             #     except Exception:
             #         # print(str(cnt) + " " + fontName + " no glyphset")
-            #         ans = "poxuy"
 
-            img = Image.Image()._new(font.getmask(char))
-            if char == '-':
-                img.resize((28, 28))
-            else:
-                img.thumbnail((28, 28))
-            # ???
-            if char in bottom_align:
-                box = ((28 - img.size[0]) // 2, 28 - img.size[1])
-            else:
-                box = tuple((n - o) // 2 for n, o in zip((28, 28), img.size))
-            # ???
-            # if char == "-":
-            #     img.show()
-            new_im = Image.new("L", (28, 28))
-            new_im.paste(img, box)
-            img = new_im
-            if img1 == img:
+            img = drawglyph_pillow(font, char, (img_width, img_height))
+            if img is None:
                 continue
-            # пустое изображение
-            if img.getbbox() is None:
-                continue
+            imgName = symb2str(char) + "_" + str(counter) + ".png"
+            print(char)
             img.save(save_folder + "/" + symb2strdir(char) + "/" + imgName)
+            # img.save(save_folder + "/" + symb2str(char) + "/" + imgName)
         counter += 1
     # remove_empty_folders(save_folder)
 
 
 def symb2str(char: str):
-    return invalid_symbols[
-        char] if char in invalid_symbols else char + "_lower" if char.islower() else char + "_upper" if char.isupper() else char
+    return invalid_symbols[char] if char in invalid_symbols else char + "_lower" \
+        if char.islower() else char + "_upper" if char.isupper() else char
 
 
 def symb2strdir(char: str):
-    return invalid_symbols[char] if char in invalid_symbols else char
+    t = invalid_symbols[char] if char in invalid_symbols else char
+    t = t.split("_lower")[0]
+    t = t.split("_upper")[0]
+    return t
 
 
 def get_all_chars_set(fonts_path):
@@ -210,14 +211,6 @@ def get_char_list_from_ttf(font_file):
     return char_list
 
 
-def generateimgs(save_imgs_folder, fontFolder, isTestFromTrain=False):
-    font2png_noregdiff(fontFolder, save_imgs_folder, isTestFromTrain)
-
-
-def generateAugedImgs(imgsfolder, augmentedSave):
-    aug_imgs(imgsfolder, augmentedSave)
-
-
 def filesize(path):
     return len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
 
@@ -233,76 +226,22 @@ def aug_imgs(path, savefolder):
 
         imgspath = '/'.join([root])
         outputpath = ("../" * len(path.split('/'))) + savefolder + "/" + root.split('\\')[-1]
-        # if root.split('\\')[-1] in [',', 'dot', '\'', '`', '_', '-', ';']:
         if root.split('\\')[-1] in dontaug:
             copyto = imgspath.split('/')[0] + "/" + savefolder + "/" + root.split('\\')[-1]
             os.makedirs(copyto)
             shutil.copytree(imgspath, copyto, dirs_exist_ok=True)
             continue
-        # elif root.split('\\')[-1] not in [',', '.', '\'', '`', '_', '-']:
         elif root.split('\\')[-1] not in dontaug:
             p = Augmentor.Pipeline(imgspath, outputpath)
-            p.zoom(probability=0.3, min_factor=0.8, max_factor=1.3)
-            p.random_distortion(probability=0.3, grid_width=4, grid_height=4, magnitude=1)
+            # p.zoom(probability=0.3, min_factor=0.8, max_factor=1.3)
+            # p.random_distortion(probability=0.3, grid_width=4, grid_height=4, magnitude=1)
+            # p.shear(probability=0.3, max_shear_left=10, max_shear_right=10)
+            # p.rotate(probability=0.3, max_right_rotation=5, max_left_rotation=5)
+            p.zoom(probability=0.3, min_factor=0.7, max_factor=1.3)
+            p.random_distortion(probability=0.3, grid_width=2, grid_height=2, magnitude=1)
             p.shear(probability=0.3, max_shear_left=10, max_shear_right=10)
             p.rotate(probability=0.3, max_right_rotation=5, max_left_rotation=5)
             p.sample(filesize(imgspath) * 3)
-
-
-def font2png_noregdiff_fonttools(fonts_folder, save_folder, testtrain=False):
-    img_height, img_width = 28, 28
-    fontsDir = "./" + fonts_folder + "/"
-
-    if os.path.isdir(save_folder):
-        shutil.rmtree(save_folder)
-    os.makedirs(save_folder)
-
-    for char in chars:
-        if char.isupper():
-            continue
-        name = symb2strdir(char)
-        os.makedirs(save_folder + "/" + name)
-
-    fontFiles = os.listdir(os.fsencode(fontsDir))
-    print(fontFiles)
-    if testtrain:
-        fontFiles = fontFiles[:len(fontFiles) // 4]
-
-    cnt = 0
-    for fontFile in fontFiles:
-        fontName = os.fsdecode(fontFile)
-        print(fontsDir + fontName)
-        font = TTFont(fontsDir + fontName)
-        glyphset = font.getGlyphSet()
-
-        # print(cnt, fontName)
-        cnt += 1
-        # # важно
-        # font = ImageFont.truetype(fontsDir + fontName, 24)
-        # img1 = Image.new("L", (img_width, img_height))
-        # draw1 = ImageDraw.Draw(img1)
-        # _, _, w1, h1 = draw1.textbbox((0, 0), "□", font)
-        # draw1.text(((img_width - w1) / 2, (img_height - h1) / 2), "□", "white", font)
-        glyphset = font.getGlyphSet()
-
-        # # важно
-        # font_chars = get_char_list_from_ttf(fontsDir + fontName)
-        # font.getGlyphSet()["A"]
-        # font.
-        # for char in chars:
-        #     if char not in font_chars:
-        #         continue
-        #     pen = FreeTypePen(glyphset)
-        #     # bp = BoundsPen(glyphset)
-        #     glyph = glyphset[char]
-        #     glyph.draw(pen)
-        #     glyph.draw(bp)
-        #
-        #     imgName = symb2str(char) + "_" + str(counter) + ".png"
-        #     img.save(save_folder + "/" + symb2strdir(char) + "/" + imgName)
-        # counter += 1
-
-# font2png_noregdiff_fonttools("fonts/fontstest", "img/testimgs")
 
 
 def add_noise(path="imgs/outputTrain"):
@@ -314,15 +253,25 @@ def add_noise(path="imgs/outputTrain"):
         elif subfolder.split('\\')[-1] not in dontaug:
             subfolderfiles = glob.glob(subfolder + "/*")
             for imgpath in subfolderfiles:
-                img = cv2.imread(imgpath, 0)
-                img = random_noise(img, mode="s&p", clip=True)
-                cv2.imwrite(imgpath, 255*img)
+                if random.random() >= 0.7:
+                    img = cv2.imread(imgpath, 0)
+                    img = random_noise(img, mode="s&p", clip=True)
+                    cv2.imwrite(imgpath, 255*img)
         # print(imgpath)
 
+
+def generateimgs(save_imgs_folder, fontFolder, isTestFromTrain=False):
+    font2png_noregdiff(fontFolder, save_imgs_folder, isTestFromTrain)
+    # font2png(fontFolder, save_imgs_folder, isTestFromTrain)
+
+
+def generateAugedImgs(imgsfolder, augmentedSave):
+    aug_imgs(imgsfolder, augmentedSave)
+
 def prepdata():
-    # generateimgs("imgs/trainimgs", "fonts/fontstrain")
-    # generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
-    # generateimgs("imgs/testimgs", "fonts/fontstest")
-    # generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
-    # generateAugedImgs("imgs/trainimgs", "outputTrain")
+    generateimgs("imgs/trainimgs", "fonts/fontstrain")
+    generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
+    generateimgs("imgs/testimgs", "fonts/fontstest")
+    generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
+    generateAugedImgs("imgs/trainimgs", "outputTrain")
     add_noise()
