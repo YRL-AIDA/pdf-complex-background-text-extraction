@@ -6,11 +6,12 @@ import shutil
 
 import Augmentor
 from PIL import ImageFont
+from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 import cv2
 from skimage.util import random_noise
 import ast
-from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code
+from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code, drawglyph_by_pen
 
 config = configparser.ConfigParser()
 config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
@@ -130,7 +131,21 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
         cnt += 1
         # важно
         font = ImageFont.truetype(fontsDir + fontName, 28)
-
+        ttfont = TTFont(fontsDir + fontName)
+        try:
+            glyphset = ttfont.getGlyphSet()
+        except:
+            continue
+        size = 0
+        for g in glyphset:
+            bp = BoundsPen(glyphset)
+            glyph = glyphset[g]
+            glyph.draw(bp)
+            if bp.bounds is None:
+                continue
+            size = max(size, abs(bp.bounds[1]) + abs(bp.bounds[3]))
+        # print(ttfont.getBestCmap())
+        cmap = ttfont.getBestCmap()
         # важно
         font_chars = get_char_list_from_ttf(fontsDir + fontName)
         for char in chars:
@@ -160,11 +175,14 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
             #     except Exception:
             #         # print(str(cnt) + " " + fontName + " no glyphset")
 
-            img = drawglyph_pillow(font, char, (img_width, img_height))
+            # img = drawglyph_pillow(font, char, (img_width, img_height))
+            try:
+                img = drawglyph_by_pen(ttfont, cmap[ord(char)], size, 0)
+            except:
+                continue
             if img is None:
                 continue
             imgName = symb2str(char) + "_" + str(counter) + ".png"
-            print(char)
             img.save(save_folder + "/" + symb2strdir(char) + "/" + imgName)
             # img.save(save_folder + "/" + symb2str(char) + "/" + imgName)
         counter += 1
@@ -273,5 +291,5 @@ def prepdata():
     generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
     generateimgs("imgs/testimgs", "fonts/fontstest")
     generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
-    generateAugedImgs("imgs/trainimgs", "outputTrain")
-    add_noise()
+    # generateAugedImgs("imgs/trainimgs", "outputTrain")
+    # add_noise()

@@ -1,7 +1,9 @@
 import configparser
 import os
 
+import fitz
 from PIL.ImageFont import ImageFont
+from fontTools.misc.transform import Offset
 from fontTools.ttLib import TTFont
 from fontTools.pens.freetypePen import FreeTypePen
 from PIL import Image, ImageOps, ImageDraw
@@ -20,8 +22,11 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     glyphset = ttfont.getGlyphSet()
     pen = FreeTypePen(glyphset)
     glyph = glyphset[glyph_name]
+    # a = glyphset['A']
     bp = BoundsPen(glyphset)
+    # bpa = BoundsPen(glyphset)
     glyph.draw(bp)
+    # a.draw(bpa)
 
     if bp.bounds is None:
         return None
@@ -30,6 +35,9 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     #     width, ascender, descender = glyph.width, ttfont['OS/2'].usWinAscent, -ttfont['OS/2'].usWinDescent
     #     height = ascender - descender
     #     img = pen.image(width=width, height=height, contain=True, transform=Offset(0, -descender))
+    #     # print(glyph_name)
+    #     # if glyph_name == 'comma':
+    #     #     img.show()
     #     background = Image.new('LA', img.size, (255, 255))
     #     img = Image.alpha_composite(background.convert("RGBA"), img.convert("RGBA"))
     #     img = img.convert("L")
@@ -43,46 +51,30 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     # except KeyError:
     #     print("не повезло")
 
-
-    if bp.bounds[1] > 0:
-        # print(1, bp.bounds)
-        # img = pen.image(width=glyph.width, height=(bp.bounds[1] + bp.bounds[3]) / 2, contain=True)
-        img = pen.image(width=glyph.width, height=bp.bounds[1]//2 + bp.bounds[3]//2, contain=True)
-        # img = pen.image(width=glyph.width, contain=True)
-    else:
-        # print(2)
-        # img = pen.image(width=glyph.width, height=1300, contain=True)
-        # img = pen.image(width=glyph.width, height=size[1]*0.9, contain=True)
-        # img = pen.image(width=glyph.width, contain=True)
-        # img = pen.image(width=glyph.width, height=size//3, contain=True)
-        # img = pen.image(width=glyph.width, height=size, contain=True)
-        # img = pen.image(width=glyph.width, height=minsize*6, contain=True)
-        img = pen.image(width=glyph.width, height=1300, contain=True)
-        # img = pen.image(width=size[0], height=size[1], contain=True)
-    # print(img.size)
+    # if bp.bounds[1] > 0:
+    #     # print(1, bp.bounds)
+    #     # img = pen.image(width=glyph.width, height=(bp.bounds[1] + bp.bounds[3]) / 2, contain=True)
+    #     img = pen.image(width=glyph.width, height=bp.bounds[1]//2 + bp.bounds[3]//2, contain=True)
+    #     # img = pen.image(width=glyph.width, contain=True)
+    # else:
+    #     # print(2)
+    #     img = pen.image(width=glyph.width, height=1300, contain=True)
+    #     # img = pen.image(width=glyph.width, height=size[1]*0.9, contain=True)
+    #     # img = pen.image(width=glyph.width, contain=True)
+    #     # img = pen.image(width=glyph.width, height=size//3, contain=True)
+    #     # if img.size[1] == size//3:
+    #     #     img = pen.image(width=glyph.width, height=size, contain=True)
+    img = pen.image(width=glyph.width, height=size, contain=True)
     background = Image.new('LA', img.size, (255, 255))
     img = Image.alpha_composite(background.convert("RGBA"), img.convert("RGBA"))
     img = img.convert("L")
-    img.thumbnail((22, 22))
-    # alpha_composite.show()
+    # img.thumbnail((22, 22))
+    img.thumbnail((28, 28))
     img = ImageOps.invert(img)
     new_im = Image.new("L", (28, 28))
     box = tuple((n - o) // 2 for n, o in zip((28, 28), img.size))
     new_im.paste(img, box)
     img = new_im
-
-    # background = Image.new('LA', img.size, (255, 255))
-    # img = Image.alpha_composite(background.convert("RGBA"), img.convert("RGBA"))
-    # # img.show()
-    # img = img.convert("L")
-    # img.thumbnail((26, 26))
-    # # img.show()
-    # img = ImageOps.invert(img)
-    # new_im = Image.new("L", (28, 28), color=0)
-    #
-    # box = tuple((n - o) // 2 for n, o in zip((28, 28), img.size))
-    # new_im.paste(img, box)
-    # img = new_im
 
     return img
 
