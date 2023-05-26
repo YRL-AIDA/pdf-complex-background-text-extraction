@@ -15,7 +15,6 @@ from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code, drawglyph_by_p
 
 config = configparser.ConfigParser()
 config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
-# config.read('config.ini', encoding='utf-8')
 config.read(config_p, encoding='utf-8')
 bottom_align = config.get("DEFAULT", "bottom_align")
 bottom_align = set([n.strip() for n in bottom_align])
@@ -96,6 +95,7 @@ def font2png(fonts_folder, save_folder, testtrain=0):
             # if img.getbbox() is None:
             #     continue
             img = drawglyph_pillow(font, char, (img_width, img_height))
+            # img = drawglyph_by_pen(ttfont, char, )
             if img is None:
                 continue
             imgName = symb2str(char) + "_" + str(counter) + ".png"
@@ -127,7 +127,6 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
     # print(fontFiles)
     for fontFile in fontFiles:
         fontName = os.fsdecode(fontFile)
-        print(cnt, fontName)
         cnt += 1
         # важно
         font = ImageFont.truetype(fontsDir + fontName, 28)
@@ -137,14 +136,18 @@ def font2png_noregdiff(fonts_folder, save_folder, testtrain=False):
         except:
             continue
         size = 0
+        msize = 9999
+        comas = 0
         for g in glyphset:
             bp = BoundsPen(glyphset)
             glyph = glyphset[g]
             glyph.draw(bp)
             if bp.bounds is None:
                 continue
+            if g == 'comma':
+                comas = abs(bp.bounds[1]) + abs(bp.bounds[3])
             size = max(size, abs(bp.bounds[1]) + abs(bp.bounds[3]))
-        # print(ttfont.getBestCmap())
+            msize = min(msize, abs(bp.bounds[1]) + abs(bp.bounds[3]))
         cmap = ttfont.getBestCmap()
         # важно
         font_chars = get_char_list_from_ttf(fontsDir + fontName)

@@ -64,7 +64,15 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     #     # img = pen.image(width=glyph.width, height=size//3, contain=True)
     #     # if img.size[1] == size//3:
     #     #     img = pen.image(width=glyph.width, height=size, contain=True)
-    img = pen.image(width=glyph.width, height=size, contain=True)
+    # img = pen.image(width=glyph.width, height=size-minsize*2, contain=True)
+    # img = pen.image(width=glyph.width, height=size, contain=True)
+    # img = pen.image(width=glyph.width, height=minsize*2 + size//2, contain=True)
+    # print(minsize, size, minsize + size//2)
+    # img = pen.image(width=glyph.width, height=minsize + size//2, contain=True)
+    img = pen.image(width=glyph.width, height=size//2 + minsize*2, contain=True)
+    # img2 = pen.image(width=glyph.width, contain=True)
+    # if img2.size[1] / img.size[1] >= 0.9:
+    #     img = pen.image(width=glyph.width, height=img2.size[1] + minsize*3, contain=True)
     background = Image.new('LA', img.size, (255, 255))
     img = Image.alpha_composite(background.convert("RGBA"), img.convert("RGBA"))
     img = img.convert("L")
@@ -105,9 +113,6 @@ def drawglyph_pillow(font: ImageFont, char: str, size: tuple):
 
 
 def drawglyph_bypen_and_code(_cmap, _glyphset, glyph_code):
-    # print(t, glyph_name)
-    # cmap = ttfont.getBestCmap()
-    # glyphset = ttfont.getGlyphSet()
     cmap = _cmap
     glyphset = _glyphset
     glyph = glyphset[cmap[glyph_code]]

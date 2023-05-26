@@ -1,9 +1,10 @@
+import configparser
 import os
 
 from keras.models import load_model
 import cv2
 import numpy as np
-
+import ast
 # try:
 #     train_ds = tf.keras.utils.image_dataset_from_directory(
 #       'imgs/trainimgs/',
@@ -16,13 +17,17 @@ import numpy as np
 #     labels = train_ds.class_names
 # except BaseException:
 #     pass
-noregdiflabels = ['!', '#', '$', '%', '&', "'", '(', ')', '+', ',', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ';', '=', '@', 'Rus_a', 'Rus_b', 'Rus_ce', 'Rus_ch', 'Rus_d', 'Rus_e', 'Rus_f', 'Rus_g', 'Rus_h', 'Rus_hard', 'Rus_i', 'Rus_ib', 'Rus_k', 'Rus_l', 'Rus_m', 'Rus_n', 'Rus_o', 'Rus_p', 'Rus_r', 'Rus_s', 'Rus_sh', 'Rus_sha', 'Rus_soft', 'Rus_t', 'Rus_th', 'Rus_u', 'Rus_uh', 'Rus_v', 'Rus_ya', 'Rus_yu', 'Rus_z', 'Rus_zh', '[', ']', '^', '_', '`', 'a', 'asterisk', 'b', 'backslash', 'c', 'colon', 'copyright', 'd', 'dot', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'less', 'm', 'more', 'n', 'o', 'p', 'q', 'question', 'quotedbl', 'r', 's', 'slash', 't', 'tm', 'u', 'v', 'vertical', 'w', 'x', 'y', 'z', '{', '}', '~']
-labels = noregdiflabels
+# noregdiflabels = ['!', '#', '$', '%', '&', "'", '(', ')', '+', ',', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ';', '=', '@', 'Rus_a', 'Rus_b', 'Rus_ce', 'Rus_ch', 'Rus_d', 'Rus_e', 'Rus_f', 'Rus_g', 'Rus_h', 'Rus_hard', 'Rus_i', 'Rus_ib', 'Rus_k', 'Rus_l', 'Rus_m', 'Rus_n', 'Rus_o', 'Rus_p', 'Rus_r', 'Rus_s', 'Rus_sh', 'Rus_sha', 'Rus_soft', 'Rus_t', 'Rus_th', 'Rus_u', 'Rus_uh', 'Rus_v', 'Rus_ya', 'Rus_yu', 'Rus_z', 'Rus_zh', '[', ']', '^', '_', '`', 'a', 'asterisk', 'b', 'backslash', 'c', 'colon', 'copyright', 'd', 'dot', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'less', 'm', 'more', 'n', 'o', 'p', 'q', 'question', 'quotedbl', 'r', 's', 'slash', 't', 'tm', 'u', 'v', 'vertical', 'w', 'x', 'y', 'z', '{', '}', '~']
+config = configparser.ConfigParser()
+config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+config.read(config_p, encoding='utf-8')
+labels = ast.literal_eval(config.get("DEFAULT", "labels"))
 # model = load_model("currentmodel.h5")
 # model = load_model("curcur.h5")
 # model = load_model("penaug.h5")
 # modelpath = config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pilnotaug_noreg2.h5')
-modelpath = config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fpenaug_noreg.h5')
+# modelpath = config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fpenaug_noreg.h5')
+modelpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model.h5')
 model = load_model(modelpath)
 model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 print(labels)
