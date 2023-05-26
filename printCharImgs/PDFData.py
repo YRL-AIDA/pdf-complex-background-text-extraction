@@ -51,7 +51,9 @@ def __draw_glyphs(save_path="pdfdata/glyphimages", fonts_path="pdfdata/extracted
         size = 0
         minsize = 10000
         gg = ""
-        # print(tosavefolder)
+        print(tosavefolder)
+        print(font.getGlyphOrder())
+        print
         l = []
         if tosavefolder == 'BHSASO+TimesNewRomanPSMT':
             continue
@@ -61,6 +63,7 @@ def __draw_glyphs(save_path="pdfdata/glyphimages", fonts_path="pdfdata/extracted
             glyph.draw(bp)
             if bp.bounds is None:
                 continue
+            # print(g)
             if size > abs(bp.bounds[1]) + abs(bp.bounds[3]):
                 gg = g
             size = max(size, abs(bp.bounds[1]) + abs(bp.bounds[3]))
@@ -149,7 +152,7 @@ def func(pdf_path):
     doc.close()
 
 
-def __match_glyphs_and_encoding(ttffont, fitzfont, images):
+def __match_glyphs_and_encoding(ttffont, fitzfont, images, dict):
     images = glob.glob(images + "/*")
     dict = {}
     # cmap14 = CmapSubtable.newSubtable(14)
@@ -184,7 +187,7 @@ def __match_glyphs_and_encoding(ttffont, fitzfont, images):
     return dict
 
 
-def __match_glyphs_and_encoding_forall():
+def __match_glyphs_and_encoding_forall(dict):
     imgfolders = "pdfdata/glyphimages/"
     imgfolders = os.path.join(os.path.dirname(os.path.abspath(__file__)), imgfolders)
     extracted_fonts_folder = "pdfdata/extracted_font/*"
@@ -197,7 +200,7 @@ def __match_glyphs_and_encoding_forall():
         fitzfont = fitz.Font(fontfile=fontfile)
         fontnameimgs = fontname.split('.')[0]
         # dicts[fontnameimgs] = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs)
-        dicts[fontnameimgs.split('+')[1]] = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs)
+        dicts[fontnameimgs.split('+')[1]] = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs, dict)
     # print(dicts)
     return dicts
 
@@ -274,6 +277,8 @@ def getCharsOfFonts(pdf_path):
                                 if isinstance(char, LTChar):
                                     text = text.replace(' ', '')
                                     text = text.replace('\n', '')
+                                    if char.fontname == 'OPEHOG+TimesET,Italic':
+                                        print(text)
                                     if char.fontname not in charsinSymbols.keys():
                                         charsinSymbols[char.fontname] = list(text)
                                     else:
@@ -285,6 +290,7 @@ def getCharsOfFonts(pdf_path):
                         pass
     for i in charsinSymbols.keys():
         charsinSymbols[i] = list(OrderedDict.fromkeys(charsinSymbols[i]))
+    # print(charsinSymbols['OPEHOG+TimesET,Italic'])
     return charsinSymbols
 
 
@@ -292,7 +298,8 @@ def gettext(pdf_path):
     txt_path = __save_pdf_as_txt(pdf_path)
     firstchars = get_encoding(txt_path)
     charsOffonts = getCharsOfFonts(pdf_path)
+    # print(firstchars['OPEHOG+TimesET,Italic'], charsOffonts['OPEHOG+TimesET,Italic'])
     __extract_pfdfonts(pdf_path)
     __draw_glyphs()
-    text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall())
-    # return correct_text(text)
+    text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall(charsOffonts))
+    return correct_text(text)

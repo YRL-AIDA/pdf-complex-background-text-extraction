@@ -12,7 +12,13 @@ from pathlib import Path
 from fontTools.agl import toUnicode
 
 text = gettext("pdf/10.PDF")
-# font = TTFont("pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
+# print(text)
+# font = TTFont("pdfdata/extracted_font/OPEHOG+TimesET,Italic.ttf")
+# Ò
+# print(font.getGlyphName('Ò'))
+# print(font.getGlyphOrder())
+# for i in font.getGlyphName('Ò')
+
 # print("1")
 # 'uni0412'
 # hex(sys.maxunicode)
@@ -58,3 +64,5 @@ import fitz
 #                 except:
 #                     pass
 # print(dict['GRTMRT+TimesNewRomanPS-BoldMT'])
+
+# print(chr(33))
