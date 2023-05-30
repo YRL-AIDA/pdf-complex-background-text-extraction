@@ -109,7 +109,7 @@ def __extract_pfdfonts(pdf_path, save_path="pdfdata/extracted_font"):
             font = doc.extract_font(xref, named=True)
             # print(font['name'], font['ext'])
             # name = font['name'].split("+", 1)[1] if "+" in font['name'] else font['name']
-            if font['ext'] != "n/a":
+            if font['ext'] != "n/a" and font['ext'] != 'cff':
                 ofile = open(dir + font['name'] + "." + font['ext'], "wb")
                 ofile.write(font['content'])
                 ofile.close()
@@ -125,7 +125,6 @@ def __match_glyphs_and_encoding(ttffont, fitzfont, images):
         #     print(type(i))
         # codes = [x for x in ttffont['cmap'].tables[0].cmap]
         # print(chr(codes[0]))
-        print('123')
         inv_cmap = {i: toUnicode(j) if 'uni' in j else j for i, j in zip(ttffont['cmap'].tables[0].cmap, ttffont['cmap'].tables[0].cmap.values())}
     else:
         inv_cmap = {i: fitzfont.glyph_name_to_unicode(i) for i in ttffont.getGlyphNames()}
@@ -302,4 +301,4 @@ def gettext(pdf_path):
     __extract_pfdfonts(pdf_path)
     __draw_glyphs()
     text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall())
-    # return correct_text(text)
+    return correct_text(text)

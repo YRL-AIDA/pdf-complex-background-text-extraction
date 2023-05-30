@@ -46,7 +46,7 @@ from PDFData import gettext
 # print(font.getGlyphOrder())
 from pdfreader import PDFDocument, SimplePDFViewer
 
-fd = open("pdf/11.pdf", "rb")
+fd = open("pdf/12.pdf", "rb")
 doc = PDFDocument(fd)
 from itertools import islice
 # fonts = {}
@@ -109,9 +109,12 @@ from itertools import islice
 # print(ord(toUnicode('u041A')) - ord(toUnicode('u0021')))
 # print(toUnicode('u0005'))
 
-text = gettext("pdf/11.pdf")
+text = gettext("pdf/12.pdf")
 for i in text:
     print(i)
+
+# f = TTFont("pdfdata/extracted_font/DAHLIJ+TimesNewRoman.ttf")
+# print(f.getBestCmap())
 
 
 # import PDFData
