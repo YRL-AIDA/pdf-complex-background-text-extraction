@@ -125,6 +125,7 @@ def __match_glyphs_and_encoding(ttffont, fitzfont, images):
         #     print(type(i))
         # codes = [x for x in ttffont['cmap'].tables[0].cmap]
         # print(chr(codes[0]))
+        print('123')
         inv_cmap = {i: toUnicode(j) if 'uni' in j else j for i, j in zip(ttffont['cmap'].tables[0].cmap, ttffont['cmap'].tables[0].cmap.values())}
     else:
         inv_cmap = {i: fitzfont.glyph_name_to_unicode(i) for i in ttffont.getGlyphNames()}
@@ -191,8 +192,6 @@ def __gettextfrompdf(pdf_path, dictionary):
                     for spans in lines['spans']:
                         for index, char in enumerate(spans['text']):
                             try:
-                                if char == ')' and spans['font'] == 'TimesNewRomanPSMT':
-                                    print("cock")
                                 if char in invalid_symbolsnoregdiff:
                                     sentence += dictionary[spans['font']][invalid_symbolsnoregdiff[char]]
                                 elif char in dictionary[spans['font']]:
@@ -303,4 +302,4 @@ def gettext(pdf_path):
     __extract_pfdfonts(pdf_path)
     __draw_glyphs()
     text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall())
-    return correct_text(text)
+    # return correct_text(text)
