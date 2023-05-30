@@ -69,7 +69,11 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     # img = pen.image(width=glyph.width, height=minsize*2 + size//2, contain=True)
     # print(minsize, size, minsize + size//2)
     # img = pen.image(width=glyph.width, height=minsize + size//2, contain=True)
-    img = pen.image(width=glyph.width, height=size//2 + minsize*2, contain=True)
+    # img = pen.image(width=glyph.width, height=size//2 + minsize*2, contain=True)
+    # img = pen.image(width=glyph.width, height=size//3 + minsize*2, contain=True)
+    img = pen.image(width=glyph.width, contain=True)
+
+    # img = pen.image(width=glyph.width, height=size, contain=True)
     # img2 = pen.image(width=glyph.width, contain=True)
     # if img2.size[1] / img.size[1] >= 0.9:
     #     img = pen.image(width=glyph.width, height=img2.size[1] + minsize*3, contain=True)
@@ -77,7 +81,7 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     img = Image.alpha_composite(background.convert("RGBA"), img.convert("RGBA"))
     img = img.convert("L")
     # img.thumbnail((22, 22))
-    img.thumbnail((28, 28))
+    img.thumbnail((18, 18))
     img = ImageOps.invert(img)
     new_im = Image.new("L", (28, 28))
     box = tuple((n - o) // 2 for n, o in zip((28, 28), img.size))

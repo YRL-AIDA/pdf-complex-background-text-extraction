@@ -12,6 +12,8 @@ from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._c_m_a_p import CmapSubtable
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer,  LTChar
+from pdfreader import PDFDocument
+from fontTools.agl import toUnicode
 
 from CNN_modelclass import recognize_glyph
 from DrawGlyph import drawglyph_by_pen, drawglyph_pillow
@@ -41,51 +43,49 @@ def __draw_glyphs(save_path="pdfdata/glyphimages", fonts_path="pdfdata/extracted
         fontname = os.fsdecode(font_file)
         font = TTFont(fonts_path + "/" + fontname)
         tosavefolder = fontname.split('.')[0]
-        # tosavefolder = tosavefolder.split('+')[1]
+        # print(tosavefolder)
         f1 = ImageFont.truetype(fonts_path + "/" + fontname, 18)
         # font = ttLib.SFNTReader(fonts_path + "/" + fontname)
         # font = fontTools.cffLib.CFFFontSet.convertCFFToCFF2(fonts_path + "/" + fontname)
         if not os.path.isdir(save_path + "/" + tosavefolder):
             os.makedirs(save_path + "/" + tosavefolder)
+
+
+        charlist = font.getGlyphSet()
         glyphset = font.getGlyphSet()
+
         size = 0
         minsize = 10000
-        gg = ""
-        print(tosavefolder)
-        print(font.getGlyphOrder())
-        print
-        l = []
-        if tosavefolder == 'BHSASO+TimesNewRomanPSMT':
-            continue
+
+        cmap = {}
+        if 'cmap' in font:
+            cmap = {j: i for i, j in zip(font['cmap'].tables[0].cmap, font['cmap'].tables[0].cmap.values())}
+            charlist = [j for j in font['cmap'].tables[0].cmap.values()]
         for g in glyphset:
             bp = BoundsPen(glyphset)
             glyph = glyphset[g]
             glyph.draw(bp)
             if bp.bounds is None:
                 continue
-            # print(g)
-            if size > abs(bp.bounds[1]) + abs(bp.bounds[3]):
-                gg = g
             size = max(size, abs(bp.bounds[1]) + abs(bp.bounds[3]))
             minsize = min(minsize, abs(bp.bounds[1]) + abs(bp.bounds[3]))
-
-        # print(minsize / size, minsize, size)
-        for g in glyphset:
-
+        for g in charlist:
             img = drawglyph_by_pen(ttfont=font, glyph_name=g, size=size, minsize=minsize)
             # img = drawglyph_pillow(pfont, pfont.glyph_name_to_unicode(g), (28, 28))
             if img is None:
                 continue
             if g[0] == '.':
                 continue
-            # print(g)
-            l.append(g)
+
+            if cmap:
+                g = chr(cmap[g])
+            if 'uni' in g:
+                g = toUnicode(g)
+            elif g in invalid_symbols:
+                g = invalid_symbols[g]
             pngname = g + "_lower" if g.islower() else g + "_upper" if g.isupper() else g
-            # img.show()
             img.save(save_path + "/" + tosavefolder + "/" + pngname + ".png")
             counter += 1
-        # l.sort()
-        # print(l)
 
 
 def __extract_pfdfonts(pdf_path, save_path="pdfdata/extracted_font"):
@@ -116,63 +116,32 @@ def __extract_pfdfonts(pdf_path, save_path="pdfdata/extracted_font"):
     doc.close()
 
 
-def func(pdf_path):
-    doc = fitz.open(pdf_path)
-    xref_visited = []
-    for page_num in range(doc.page_count):
-        page = doc.get_page_fonts(page_num)
-        page = doc.get_page_fonts(page_num)
-        for fontinfo in page:
-            xref = fontinfo[0]
-            if xref in xref_visited:
-                continue
-            xref_visited.append(xref)
-            font = doc.extract_font(xref, named=True)
-            if font['name'] == 'VGPRFL+TimesNewRoman,Bold':
-                print("123")
-                doc[page_num].insert_font(fontname="VGPRFL+TimesNewRoman,Bold",
-                                          fontfile="pdfdata/extracted_font/VGPRFL+TimesNewRoman,Bold.ttf")
-            if font['name'] == 'ATSFPL+TimesNewRoman,BoldItalic':
-                print("123")
-                doc[page_num].insert_font(fontname="ATSFPL+TimesNewRoman,BoldItalic",
-                                          fontfile="pdfdata/extracted_font/ATSFPL+TimesNewRoman,BoldItalic.ttf")
-            if font['name'] == 'FCDHEK+TimesNewRoman,Italic':
-                print("123")
-                doc[page_num].insert_font(fontname="FCDHEK+TimesNewRoman,Italic",
-                                          fontfile="pdfdata/extracted_font/FCDHEK+TimesNewRoman,Italic.ttf")
-            if font['name'] == 'MVVIUJ+TimesNewRoman':
-                print("123")
-                doc[page_num].insert_font(fontname="MVVIUJ+TimesNewRoman",
-                                          fontfile="pdfdata/extracted_font/MVVIUJ+TimesNewRoman.ttf")
-            if font['name'] == 'OPEHOG+TimesET,Italic':
-                print("123")
-                doc[page_num].insert_font(fontname="OPEHOG+TimesET,Italic",
-                                          fontfile="pdfdata/extracted_font/OPEHOG+TimesET,Italic.ttf")
-    doc.save("123.pdf")
-    doc.close()
-
-
-def __match_glyphs_and_encoding(ttffont, fitzfont, images, dict):
+def __match_glyphs_and_encoding(ttffont, fitzfont, images):
     images = glob.glob(images + "/*")
     dict = {}
-    # cmap14 = CmapSubtable.newSubtable(14)
-    inv_cmap = {i: fitzfont.glyph_name_to_unicode(i) for i in ttffont.getGlyphNames()}
+    if 'cmap' in ttffont:
+        # inv_cmap = {toUnicode(j) if 'uni' in j else j: i for i, j in zip(ttffont['cmap'].tables[0].cmap, ttffont['cmap'].tables[0].cmap.values())}
+        # for i in ttffont['cmap'].tables[0].cmap:
+        #     print(type(i))
+        # codes = [x for x in ttffont['cmap'].tables[0].cmap]
+        # print(chr(codes[0]))
+        inv_cmap = {i: toUnicode(j) if 'uni' in j else j for i, j in zip(ttffont['cmap'].tables[0].cmap, ttffont['cmap'].tables[0].cmap.values())}
+    else:
+        inv_cmap = {i: fitzfont.glyph_name_to_unicode(i) for i in ttffont.getGlyphNames()}
 
     # print(inv_cmap)
     # print(cmap)
     for img in images:
         key = ((img.split('\\')[-1]).split('.')[0]).split('_')[0]
-        if key not in inv_cmap:
-            continue
         pred = recognize_glyph(img)
-        key = chr(inv_cmap[key])
-        # print(key)
-        # if pred in inv_map:
-        #     name = inv_map[pred]
+        if key in inv_cmap:
+            key = chr(inv_cmap[key])
+
         if pred in inv_mapnoregdiff:
             name = inv_mapnoregdiff[pred]
         else:
             name = pred
+        # print(key)
         dict[key] = name
     # cmap14.platformID = 3
     # cmap14.platEncID = 10
@@ -184,10 +153,11 @@ def __match_glyphs_and_encoding(ttffont, fitzfont, images, dict):
     # font['cmap'] = cmap
     # print(font.getBestCmap())
     # return font.getBestCmap()
+    # print(dict)
     return dict
 
 
-def __match_glyphs_and_encoding_forall(dict):
+def __match_glyphs_and_encoding_forall():
     imgfolders = "pdfdata/glyphimages/"
     imgfolders = os.path.join(os.path.dirname(os.path.abspath(__file__)), imgfolders)
     extracted_fonts_folder = "pdfdata/extracted_font/*"
@@ -200,38 +170,49 @@ def __match_glyphs_and_encoding_forall(dict):
         fitzfont = fitz.Font(fontfile=fontfile)
         fontnameimgs = fontname.split('.')[0]
         # dicts[fontnameimgs] = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs)
-        dicts[fontnameimgs.split('+')[1]] = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs, dict)
-    # print(dicts)
+        matchingres = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs)
+        dicts[fontnameimgs.split('+')[1]] = matchingres if fontnameimgs.split('+')[1] not in dicts else matchingres | dicts[fontnameimgs.split('+')[1]]
+    print(dicts)
     return dicts
 
 
 def __gettextfrompdf(pdf_path, dictionary):
     doc = fitz.open(pdf_path)
     text = []
+    # print("\"" in invalid_symbolsnoregdiff)
+    # print("\"" in inv_mapnoregdiff)
+    # print(inv_mapnoregdiff)
     for page in doc:
         sentence = ""
         for blocks in page.get_text("dict")['blocks']:
+            # print(blocks)
             try:
                 for lines in blocks['lines']:
                     for spans in lines['spans']:
                         for index, char in enumerate(spans['text']):
                             try:
-                                sentence += dictionary[spans['font']][char]
+                                if char == ')' and spans['font'] == 'TimesNewRomanPSMT':
+                                    print("cock")
+                                if char in invalid_symbolsnoregdiff:
+                                    sentence += dictionary[spans['font']][invalid_symbolsnoregdiff[char]]
+                                elif char in dictionary[spans['font']]:
+                                    sentence += dictionary[spans['font']][char]
+                                else:
+                                    sentence += dictionary[spans['font']][char]
                             except KeyError:
                                 sentence += char
                     sentence += "\n"
             except KeyError:
                 pass
         text.append(sentence)
-        break
     return text
 
 
-def __save_pdf_as_txt(pdf_path):
-    name = pdf_path.split('/')[-1].split('.')[0]
-    shutil.copyfile(pdf_path, "pdfdata/" + name + ".txt")
-    path = "pdfdata/" + name + ".txt"
-    return path
+# def __save_pdf_as_txt(pdf_path):
+#     name = pdf_path.split('/')[-1].split('.')[0]
+#     # shutil.copyfile(pdf_path, "pdfdata/" + name + ".txt")
+#     path = "pdfdata/" + name + ".txt"
+#     return path
 
 def get_encoding(txt_path):
     ofile = open(txt_path, "rb")
@@ -277,8 +258,6 @@ def getCharsOfFonts(pdf_path):
                                 if isinstance(char, LTChar):
                                     text = text.replace(' ', '')
                                     text = text.replace('\n', '')
-                                    if char.fontname == 'OPEHOG+TimesET,Italic':
-                                        print(text)
                                     if char.fontname not in charsinSymbols.keys():
                                         charsinSymbols[char.fontname] = list(text)
                                     else:
@@ -294,12 +273,34 @@ def getCharsOfFonts(pdf_path):
     return charsinSymbols
 
 
+def __match_glyphnames2chars(pdf_path):
+    fd = open(pdf_path, "rb")
+    doc = PDFDocument(fd)
+    fonts = {}
+    for page in doc.pages():
+        fonts = fonts | page.Resources.Font
+    fontfiles = glob.glob("pdfdata/extracted_font")
+    ttfonts = {}
+    for fontfile in fontfiles:
+        ttfonts[fontfile.split('\\')[-1].split('.')[0]] = TTFont(fontfile)
+
+    matching = {}
+
+    for font in fonts:
+        glyphorder = ttfonts[font.BaseFont].getGlyphOrder()
+
+
+
+
+
 def gettext(pdf_path):
-    txt_path = __save_pdf_as_txt(pdf_path)
-    firstchars = get_encoding(txt_path)
-    charsOffonts = getCharsOfFonts(pdf_path)
-    # print(firstchars['OPEHOG+TimesET,Italic'], charsOffonts['OPEHOG+TimesET,Italic'])
+    # txt_path = __save_pdf_as_txt(pdf_path)
+    # firstchars = get_encoding(txt_path)
+    # charsOffonts = getCharsOfFonts(pdf_path)
+    # print(charsOffonts)
+    # font = TTFont("pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
+    # print(font.getGlyphOrder(), charsOffonts['GRTMRT+TimesNewRomanPS-BoldMT'])
     __extract_pfdfonts(pdf_path)
     __draw_glyphs()
-    text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall(charsOffonts))
+    text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall())
     return correct_text(text)
