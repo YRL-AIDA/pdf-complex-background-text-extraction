@@ -20,8 +20,18 @@ bottom_align = config.get("DEFAULT", "bottom_align")
 bottom_align = set([n.strip() for n in bottom_align])
 punctuation = eval(config.get("DEFAULT", "punctuation"))
 invalid_symbols = eval(config.get("DEFAULT", "invalidSymbols"))
-chars = config.get('DEFAULT', 'Symbols')
-chars = set([n.strip() for n in chars])
+
+# chars = config.get('DEFAULT', 'Symbols')
+# RusAndPunc = config.get('DEFAULT', 'RusAndPunc')
+# EngAndPunc = config.get('DEFAULT', 'EngAndPunc')
+#
+# chars = set([n.strip() for n in chars])
+# RusAndPunc = set([n.strip() for n in RusAndPunc])
+# EngAndPunc = set([n.strip() for n in EngAndPunc])
+
+# chars = config.get('DEFAULT', 'Symbols')
+# chars = set([n.strip() for n in chars])
+
 dontaug = ast.literal_eval(config.get("DEFAULT", "dont_aug"))
 
 
@@ -254,21 +264,16 @@ def aug_imgs(path, savefolder):
             continue
         elif root.split('\\')[-1] not in dontaug:
             p = Augmentor.Pipeline(imgspath, outputpath)
-            # p.zoom(probability=0.3, min_factor=0.8, max_factor=1.3)
-            # p.random_distortion(probability=0.3, grid_width=4, grid_height=4, magnitude=1)
+            p.zoom(probability=0.1, min_factor=0.7, max_factor=1.3)
+            # p.random_distortion(probability=0.3, grid_width=2, grid_height=2, magnitude=1)
             # p.shear(probability=0.3, max_shear_left=10, max_shear_right=10)
             # p.rotate(probability=0.3, max_right_rotation=5, max_left_rotation=5)
-            p.zoom(probability=0.3, min_factor=0.7, max_factor=1.3)
-            p.random_distortion(probability=0.3, grid_width=2, grid_height=2, magnitude=1)
-            p.shear(probability=0.3, max_shear_left=10, max_shear_right=10)
-            p.rotate(probability=0.3, max_right_rotation=5, max_left_rotation=5)
             p.sample(filesize(imgspath) * 3)
 
 
 def add_noise(path="imgs/outputTrain"):
     subfolders = glob.glob(path + "/*")
     for subfolder in subfolders:
-        # if subfolder.split('\\')[-1] in ['dot', ',', 'quotedbl', '_', '`', '\'', '-']:
         if subfolder.split('\\')[-1] in dontaug:
             continue
         elif subfolder.split('\\')[-1] not in dontaug:
@@ -278,7 +283,6 @@ def add_noise(path="imgs/outputTrain"):
                     img = cv2.imread(imgpath, 0)
                     img = random_noise(img, mode="s&p", clip=True)
                     cv2.imwrite(imgpath, 255*img)
-        # print(imgpath)
 
 
 def generateimgs(save_imgs_folder, fontFolder, isTestFromTrain=False):
@@ -289,7 +293,19 @@ def generateimgs(save_imgs_folder, fontFolder, isTestFromTrain=False):
 def generateAugedImgs(imgsfolder, augmentedSave):
     aug_imgs(imgsfolder, augmentedSave)
 
-def prepdata():
+
+def prepdata(charPool = 'RusEng'):
+    assert charPool == 'RusEng' or charPool == 'Eng' or charPool == 'Rus', 'no such charPool'
+    if charPool == 'RusEng':
+        ininame = 'Symbols'
+    elif charPool == 'Eng':
+        ininame = 'EngAndPunc'
+    else:
+        ininame = 'RusAndPunc'
+    global chars
+    chars = config.get('DEFAULT', ininame)
+    chars = set([n.strip() for n in chars])
+
     generateimgs("imgs/trainimgs", "fonts/fontstrain")
     generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
     generateimgs("imgs/testimgs", "fonts/fontstest")

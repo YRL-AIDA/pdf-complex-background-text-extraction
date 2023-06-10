@@ -2,6 +2,9 @@ import glob
 import shutil
 
 # from PDFData import gettext
+from PyPDF2 import PdfReader, PdfFileReader
+from pdfreader import PDFDocument, SimplePDFViewer
+
 from Analize import analize_word
 from fontTools.ttLib import TTFont
 import fitz
@@ -12,110 +15,79 @@ from fitz import adobe_glyph_names
 from PIL import ImageFont
 
 from fontTools.agl import toUnicode
-# !
-# text = gettext("pdf/10.PDF")
-# # print(ord(toUnicode('uni
-# 041A')) - ord('!'))
-# # print(ord(toUnicode('uni041C')) - ord('"'))
-# print(ord(toUnicode('uni041A')), ord('!'))
-# print(ord(toUnicode('uni041C')), ord('"'))
-# print(ord(toUnicode('uni041E')), ord('#'))
-# print(text)
-
-# text = gettext("pdf/10.PDF")
-# font = fitz.Font("pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
-# print(adobe_glyph_names())
-# print(font.g)
-# import DrawGlyph
-# q = ImageFont.truetype(font="pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
-# DrawGlyph.drawglyph_pillow(q, "$", (28, 28)).show()
-# gettext("pdf/7.PDF")
-from fontTools.afmLib import AFM
-# afm = AFM("pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
+from DataPrepare import prepdata
 from PDFData import gettext
+import PDFData
+import sys
+sys.path.insert(0, 'testqual')
+from text_evaluation import similarity
+import re
+# doc = fitz.open("pdf/11.pdf")
+# for page in doc:
+#     print(page.number)
+#     for i in page.get_text('rawdict')['blocks']:
+#         print(i)
 
-# font = TTFont("pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
-# font = TTFont("pdfdata/extracted_font/VGPRFL+TimesNewRoman,Bold.ttf")
-# font['cmap']
-# font['cmap']
-# for i,j in zip(font['cmap'].tables[0].cmap, font['cmap'].tables[0].cmap.values()):
-#     print(i,j)
-# font['cmap']
-# print(font.getBestCmap())
-# print(font.getGlyphNames())
-# print(font.getGlyphOrder())
-from pdfreader import PDFDocument, SimplePDFViewer
-
-fd = open("pdf/12.pdf", "rb")
-doc = PDFDocument(fd)
-from itertools import islice
-# fonts = {}
+doc = PDFDocument(open('pdf/11.pdf', 'rb'))
+viewer = SimplePDFViewer(open('pdf/11.pdf', 'rb'))
+# for canvas in viewer:
+#     pass
+#     print(canvas.strings)
 # for page in doc.pages():
-#     # print(page.Resources.Font)
-#     for i, j in zip(page.Resources.Font, page.Resources.Font.values()):
-#         fonts[i] = j
+#     print(page.Resources.ProcSet[1])
+
+reader = PdfReader("pdf/7.pdf")
+
+page = reader.pages[0]
+
+parts = []
+
+
+def visitor_body(text, cm, tm, font_dict, font_size):
+    # print(text)
+    # parts.append(text)
+    print(text, cm, tm, font_dict)
+    # if font_dict is not None:
+    #     parts.append(text)
+
+# for page in reader.pages:
+#     text = page.extract_text()
+#     for line in text:
+#         print(line)
+# doc = fitz.open('pdf/7.PDF')
+# p = doc[0]
+    # text_lower = text.lower()
+    # for line in text_lower:
+    #     print(line)
+# page.extract_text(visitor_text=visitor_body)
+# page.extract_text(visitor_text=visitor_body)
+# text_body = " ".join(parts)
+# print(text_body)
+# text_body = "".join(parts)
+# for i in reader.pages:
+#     i.extract_text(visitor_text=visitor_body)
+# text_body = ""
+# for i in parts:
+#     # print("")
+#     text_body += i[1]
+# print(text_body)
 
 
 
-# fontfiles = glob.glob("pdfdata/extracted_font/*.ttf")
-# ttfonts = {}
-# for fontfile in fontfiles:
-#     ttfonts[fontfile.split('\\')[-1].split('.')[0]] = TTFont(fontfile)
+with open('testqual/ex.txt', 'r', encoding='utf-8') as file:
+    extracted = file.read().replace('\n', '')
+    extracted = re.sub(' +', ' ', extracted)
+
+with open('testqual/or.txt', 'r', encoding='utf-8') as file:
+    orig = file.read().replace('\n', '')
+    orig = re.sub(' +', ' ', orig)
 
 
-# ff = fitz.Font(fontfile="pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
-# # print(ff.valid_codepoints())
-# for i in ff.valid_codepoints():
-#     print(chr(i))
-# for font in fonts.values():
-#     glyphorder = ttfonts[font.BaseFont].getGlyphOrder()
-#     # print(font.BaseFont)
-#     # print(glyphorder)
-#     # print(ttfonts[font.BaseFont].getGlyphNames())
-#     firstchar = font.FirstChar
-#     lastchar = font.LastChar
-#     # convdict = {toUnicode(x): chr(y) for x, y in zip(glyphorder, range(33, 33 + len(glyphorder)))}
-#
-#     glyphorder = [toUnicode(x) for x in glyphorder]
+print(similarity(extracted, orig))
 
+# print(PDFData.__gettextfrompdf("pdf/2.pdf", {}))
 
-# cmap = {}
-# for page in doc.pages():
-#     print(page)
-# viewer = SimplePDFViewer(fd)
-# viewer.render()
-# md = viewer.canvas.strings
-# print(md)
-#     cmap = {fontname: fontcmap for fontname, fontcmap in zip(fontinfo.BaseFont, fontinfo.Type for fontinfo in page.Resources.Font)}
-# cmaps = {x: y for x, y in zip(f,f for f in z.Resources.Font.values for z in pages)}
-
-# qwer = {x: y for x, y in zip(fonts.)}
-# for font in fonts:
-
-
-# page = next(islice(doc.pages(), 0, 1))
-# # print(page)
-# f = page.Resources.Font['F3.1']
-# # dd = {x: y for x, y in zip(fonts.keys(), next(islice(doc.pages(), 0)))}
-# # print(list(islice(doc.pages(), 0, None)))
-# # for i in list(islice(doc.pages(), 0, None)):
-# #     print(i)
-# # print(list(islice('ABCDEFG', 0, None, 1)))
-# # print(fonts)
-# cmap = f.ToUnicode
-# data = cmap.filtered
-# print(data.decode())
-# print(ord(toUnicode('u003A')))
-# print(ord(toUnicode('u041A')) - ord(toUnicode('u0021')))
-# print(toUnicode('u0005'))
-
-text = gettext("pdf/12.pdf")
+text = gettext("pdf/7.pdf", mode='Rus', endpage=2)
 for i in text:
     print(i)
 
-# f = TTFont("pdfdata/extracted_font/DAHLIJ+TimesNewRoman.ttf")
-# print(f.getBestCmap())
-
-
-# import PDFData
-# print(PDFData.recognize_glyph("pdfdata/glyphimages/OVZFUR+TimesNewRomanPSMT/).png"))

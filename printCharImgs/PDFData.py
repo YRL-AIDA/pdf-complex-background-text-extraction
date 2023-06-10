@@ -3,20 +3,17 @@ import glob
 import os
 import shutil
 from collections import OrderedDict
-from copy import copy
-
 import fitz
 from PIL import ImageFont
+from PyPDF2 import PdfReader
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
-from fontTools.ttLib.tables._c_m_a_p import CmapSubtable
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer,  LTChar
-from pdfreader import PDFDocument
 from fontTools.agl import toUnicode
 
-from CNN_modelclass import recognize_glyph
-from DrawGlyph import drawglyph_by_pen, drawglyph_pillow
+from CNN_modelclass import CNN
+from DrawGlyph import drawglyph_by_pen
 from Analize import correct_text
 
 config = configparser.ConfigParser()
@@ -28,8 +25,10 @@ invalid_symbols = eval(config.get("DEFAULT", "invalidSymbols"))
 inv_map = {v: k for k, v in invalid_symbols.items()}
 invalid_symbolsnoregdiff = eval(config.get("DEFAULT", "invalidSymbolsnoregdiff"))
 inv_mapnoregdiff = {v: k for k, v in invalid_symbolsnoregdiff.items()}
-eng = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-
+fitz.TOOLS.set_subset_fontnames(True)
+global parts
+parts = []
+global cnn
 
 def __draw_glyphs(save_path="pdfdata/glyphimages", fonts_path="pdfdata/extracted_font"):
     save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), save_path)
@@ -116,7 +115,7 @@ def __extract_pfdfonts(pdf_path, save_path="pdfdata/extracted_font"):
     doc.close()
 
 
-def __match_glyphs_and_encoding(ttffont, fitzfont, images):
+def __match_glyphs_and_encoding(ttffont, fitzfont, images, mode):
     images = glob.glob(images + "/*")
     dict = {}
     if 'cmap' in ttffont:
@@ -133,7 +132,7 @@ def __match_glyphs_and_encoding(ttffont, fitzfont, images):
     # print(cmap)
     for img in images:
         key = ((img.split('\\')[-1]).split('.')[0]).split('_')[0]
-        pred = recognize_glyph(img)
+        pred = cnn.recognize_glyph(img)
         if key in inv_cmap:
             key = chr(inv_cmap[key])
 
@@ -157,7 +156,7 @@ def __match_glyphs_and_encoding(ttffont, fitzfont, images):
     return dict
 
 
-def __match_glyphs_and_encoding_forall():
+def __match_glyphs_and_encoding_forall(mode):
     imgfolders = "pdfdata/glyphimages/"
     imgfolders = os.path.join(os.path.dirname(os.path.abspath(__file__)), imgfolders)
     extracted_fonts_folder = "pdfdata/extracted_font/*"
@@ -170,40 +169,101 @@ def __match_glyphs_and_encoding_forall():
         fitzfont = fitz.Font(fontfile=fontfile)
         fontnameimgs = fontname.split('.')[0]
         # dicts[fontnameimgs] = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs)
-        matchingres = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs)
-        dicts[fontnameimgs.split('+')[1]] = matchingres if fontnameimgs.split('+')[1] not in dicts else matchingres | dicts[fontnameimgs.split('+')[1]]
+        matchingres = __match_glyphs_and_encoding(ttffont, fitzfont, imgfolders + fontnameimgs, mode)
+        # dicts[fontnameimgs.split('+')[1]] = matchingres if fontnameimgs.split('+')[1] not in dicts else matchingres | dicts[fontnameimgs.split('+')[1]]
+        dicts[fontnameimgs] = matchingres if fontnameimgs.split('+')[1] not in dicts else matchingres | dicts[fontnameimgs.split('+')[1]]
+        # print(matchingres | dicts[fontnameimgs.split('+')[1]])
     print(dicts)
     return dicts
 
 
-def __gettextfrompdf(pdf_path, dictionary):
+def __gettextfrompdf(pdf_path, dictionary, start=0, end=0):
     doc = fitz.open(pdf_path)
     text = []
-    # print("\"" in invalid_symbolsnoregdiff)
-    # print("\"" in inv_mapnoregdiff)
-    # print(inv_mapnoregdiff)
-    for page in doc:
+    if end == 0:
+        end = doc.page_count
+    pages = [doc[i] for i in range(start, end)]
+    for page in pages:
         sentence = ""
         for blocks in page.get_text("dict")['blocks']:
-            # print(blocks)
             try:
                 for lines in blocks['lines']:
+                    linetext = ""
                     for spans in lines['spans']:
+                        word = ""
                         for index, char in enumerate(spans['text']):
                             try:
                                 if char in invalid_symbolsnoregdiff:
-                                    sentence += dictionary[spans['font']][invalid_symbolsnoregdiff[char]]
+                                    word += dictionary[spans['font']][invalid_symbolsnoregdiff[char]]
+                                    # sentence += dictionary[spans['font']][invalid_symbolsnoregdiff[char]]
                                 elif char in dictionary[spans['font']]:
-                                    sentence += dictionary[spans['font']][char]
+                                    word += dictionary[spans['font']][char]
+                                    # sentence += dictionary[spans['font']][char]
                                 else:
-                                    sentence += dictionary[spans['font']][char]
+                                    # sentence += dictionary[spans['font']][char]
+                                    word += char
+                                    # sentence += char
                             except KeyError:
-                                sentence += char
+                                word += char
+                                # sentence += char
+                        linetext += word
+                        # print(word)
+                        # word = word.lstrip(' ')
+                        # sentence += word
+                    linetext = linetext.lstrip(' ')
+                    sentence += linetext
                     sentence += "\n"
             except KeyError:
                 pass
         text.append(sentence)
     return text
+
+    # reader = PdfReader(pdf_path)
+    # pages = []
+    # text = []
+    # pagestoread = [reader.pages[i] for i in range(start, end)]
+    # for page in pagestoread:
+    #     global parts
+    #     parts = []
+    #     page.extract_text(visitor_text=visitor_body)
+    #     pages.append(parts)
+    # # print(pages)
+    # for page in pages:
+    #     pagetext = ""
+    #     for i in page:
+    #         curtext = ""
+    #         # print(i)
+    #         line = ""
+    #         for char in i[1]:
+    #             try:
+    #                 # if char == ' ' or char == '\n':
+    #                 #     pagetext += char
+    #                 if char in invalid_symbolsnoregdiff:
+    #                     pagetext += dictionary[i[0]][invalid_symbolsnoregdiff[char]]
+    #                     line +=  dictionary[i[0]][invalid_symbolsnoregdiff[char]]
+    #                     # curtext += dictionary[i[0]][invalid_symbolsnoregdiff[char]]
+    #                 elif char in dictionary[i[0]]:
+    #                     pagetext += dictionary[i[0]][char]
+    #                     line += dictionary[i[0]][char]
+    #                     # curtext += dictionary[i[0]][char]
+    #                 else:
+    #                     # pagetext += dictionary[i[0]][char]
+    #                     pagetext += char
+    #                     line += char
+    #                     # curtext += char
+    #             except KeyError:
+    #                 pagetext += char
+    #                 line += char
+    #         # if line != '\n' and not line.isspace():
+    #         #     print(line)
+    #         print('line', line)
+    #         # print(" " + curtext + " ")
+    #         pagetext += "\n"
+    #     # print(pagetext)
+    #     text.append(pagetext)
+    # return text
+    # print(text_body)
+
 
 
 # def __save_pdf_as_txt(pdf_path):
@@ -232,13 +292,10 @@ def get_encoding(txt_path):
             lcl.append(nametoadd)
         if fontname1 in i or fontname2 in i or fontname3 in i:
             fontnametoadd = i.decode()
-            # print(fontnametoadd)
             if '+' not in fontnametoadd:
                 continue
             fontnametoadd = fontnametoadd.split(' ')[-1].split('/')[-1].split('\n')[0]
             fontnamel.append(fontnametoadd)
-    from collections import OrderedDict
-    # dict = {name: (x, charsinSymbols) for name, x, y in zip(fontnamel, fcl, lcl)}
     dict = {name: x for name, x in zip(fontnamel, fcl)}
     return dict
 
@@ -267,38 +324,45 @@ def getCharsOfFonts(pdf_path):
                         pass
     for i in charsinSymbols.keys():
         charsinSymbols[i] = list(OrderedDict.fromkeys(charsinSymbols[i]))
-    # print(charsinSymbols['OPEHOG+TimesET,Italic'])
     return charsinSymbols
 
 
-def __match_glyphnames2chars(pdf_path):
-    fd = open(pdf_path, "rb")
-    doc = PDFDocument(fd)
-    fonts = {}
-    for page in doc.pages():
-        fonts = fonts | page.Resources.Font
-    fontfiles = glob.glob("pdfdata/extracted_font")
-    ttfonts = {}
-    for fontfile in fontfiles:
-        ttfonts[fontfile.split('\\')[-1].split('.')[0]] = TTFont(fontfile)
-
-    matching = {}
-
-    for font in fonts:
-        glyphorder = ttfonts[font.BaseFont].getGlyphOrder()
-
-
+# def __match_glyphnames2chars(pdf_path):
+#     fd = open(pdf_path, "rb")
+#     doc = PDFDocument(fd)
+#     fonts = {}
+#     for page in doc.pages():
+#         fonts = fonts | page.Resources.Font
+#     fontfiles = glob.glob("pdfdata/extracted_font")
+#     ttfonts = {}
+#     for fontfile in fontfiles:
+#         ttfonts[fontfile.split('\\')[-1].split('.')[0]] = TTFont(fontfile)
+#
+#     matching = {}
+#
+#     for font in fonts:
+#         glyphorder = ttfonts[font.BaseFont].getGlyphOrder()
 
 
+def visitor_body(text, cm, tm, font_dict, font_size):
+    global parts
+    if font_dict is not None:
+        if not text.isspace() and text != '\n' and text != '':
+            parts.append((font_dict['/BaseFont'].split('/')[-1], text))
 
-def gettext(pdf_path):
+
+def gettext(pdf_path, mode='RusEng', startpage=0, endpage=0):
     # txt_path = __save_pdf_as_txt(pdf_path)
     # firstchars = get_encoding(txt_path)
     # charsOffonts = getCharsOfFonts(pdf_path)
     # print(charsOffonts)
     # font = TTFont("pdfdata/extracted_font/GRTMRT+TimesNewRomanPS-BoldMT.ttf")
     # print(font.getGlyphOrder(), charsOffonts['GRTMRT+TimesNewRomanPS-BoldMT'])
+    global cnn
+    cnn = CNN(mode)
     __extract_pfdfonts(pdf_path)
     __draw_glyphs()
-    text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall())
-    return correct_text(text)
+    text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall(mode), start=startpage, end=endpage)
+    if mode == 'RusEng':
+        text = correct_text(text)
+    return text
