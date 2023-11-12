@@ -1,0 +1,7 @@
+numpy
+pillow
+PyMuPDF
+freetype-py
+fonttools
+keras
+pdfminer.six
