@@ -5,13 +5,14 @@ import shutil
 from collections import OrderedDict
 import fitz
 from PIL import ImageFont
-from PyPDF2 import PdfReader
+# from PyPDF2 import PdfReader
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 from pdfminer.high_level import extract_pages
 from pdfminer.layout import LTTextContainer,  LTChar
 from fontTools.agl import toUnicode
 
+# from CNN_modelclass import CNN
 from CNN_modelclass import CNN
 from DrawGlyph import drawglyph_by_pen
 from Analize import correct_text

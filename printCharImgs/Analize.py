@@ -1,6 +1,9 @@
 import configparser
 import os
 import re
+
+from typing import List
+
 config = configparser.ConfigParser()
 config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
 config.read(config_p, encoding='utf-8')
@@ -37,7 +40,7 @@ def analize_word(string: str):
     return converted
 
 
-def correct_text(text: list[str]):
+def correct_text(text: List[str]):
     corrected_text = []
     for page in text:
         if not page.isspace():

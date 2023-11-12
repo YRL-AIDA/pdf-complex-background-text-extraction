@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 import ast
 
+
+
 # try:
 #     train_ds = tf.keras.utils.image_dataset_from_directory(
 #       'imgs/trainimgs/',
@@ -24,9 +26,11 @@ config.read(config_p, encoding='utf-8')
 # rusenglabels = ast.literal_eval(config.get("LABELS", "labels"))
 # englabels = ast.literal_eval(config.get("LABELS", "englabels"))
 # ruslabels = ast.literal_eval(config.get("LABELS", "ruslabels"))
-modelpathruseng = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model2.h5')
-modelruseng = load_model(modelpathruseng)
-modelruseng.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+
+# modelpathruseng = os.path.join(os.path.dirname(os.path.abspath(__file__)), config['CNN']['cnn_name'])
+# modelruseng = load_model(modelpathruseng)
+# modelruseng.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
 
 
 # def __init__(mode):
@@ -65,13 +69,13 @@ class CNN:
     def __init__(self, mode):
         assert mode == 'Rus' or mode == 'Eng' or mode == 'RusEng', 'Wrong mode'
         if mode == 'Rus':
-            self.model = load_model(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Rus.h5'))
+            self.model = load_model(os.path.join(os.path.dirname(os.path.abspath(__file__)), config['CNN']['cnn_rus']))
             self.labels = ast.literal_eval(config.get("LABELS", "ruslabels"))
         elif mode == 'Eng':
-            self.model = load_model(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Eng.h5'))
+            self.model = load_model(os.path.join(os.path.dirname(os.path.abspath(__file__)), config['CNN']['cnn_eng']))
             self.labels = ast.literal_eval(config.get("LABELS", "englabels"))
         elif mode == 'RusEng':
-            self.model = load_model(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model2.h5'))
+            self.model = load_model(os.path.join(os.path.dirname(os.path.abspath(__file__)), config['CNN']['cnn_ruseng']))
             self.labels = ast.literal_eval(config.get("LABELS", "rusenglabels"))
 
     def recognize_glyph(self, png):

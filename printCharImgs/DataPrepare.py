@@ -12,6 +12,9 @@ import cv2
 from skimage.util import random_noise
 import ast
 from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code, drawglyph_by_pen
+from os import walk
+from os import listdir
+from os.path import isfile, join
 
 config = configparser.ConfigParser()
 config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
@@ -294,6 +297,8 @@ def generateAugedImgs(imgsfolder, augmentedSave):
     aug_imgs(imgsfolder, augmentedSave)
 
 
+
+
 def prepdata(charPool = 'RusEng'):
     assert charPool == 'RusEng' or charPool == 'Eng' or charPool == 'Rus', 'no such charPool'
     if charPool == 'RusEng':
@@ -306,9 +311,21 @@ def prepdata(charPool = 'RusEng'):
     chars = config.get('DEFAULT', ininame)
     chars = set([n.strip() for n in chars])
 
-    generateimgs("imgs/trainimgs", "fonts/fontstrain")
-    generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
+    # generateimgs("imgs/trainimgs", "fonts/fontstrain")
+    # generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
+    generateimgs("imgs/train_and_val", "fonts/fonts")
     generateimgs("imgs/testimgs", "fonts/fontstest")
     generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
     # generateAugedImgs("imgs/trainimgs", "outputTrain")
     # add_noise()
+
+
+def listFonts(fontfolder):
+    fileswithnum = []
+    ind = 1
+    print(enumerate(listdir(fontfolder)), listdir(fontfolder))
+    for i in listdir(fontfolder):
+        if isfile(join(fontfolder, i)):
+            fileswithnum.append((ind, i))
+            ind += 1
+    return fileswithnum

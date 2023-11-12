@@ -9,3 +9,5 @@ printCharImgs/freetype/
 printCharImgs/.idea/misc.xml
 *.h5
 *.txt
+*.fon
+*.ttc
