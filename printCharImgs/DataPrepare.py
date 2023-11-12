@@ -3,6 +3,7 @@ import glob
 import os
 import random
 import shutil
+from pathlib import Path
 
 import Augmentor
 from PIL import ImageFont
@@ -12,7 +13,7 @@ import cv2
 from skimage.util import random_noise
 import ast
 from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code, drawglyph_by_pen
-from os import walk
+import splitfolders
 from os import listdir
 from os.path import isfile, join
 
@@ -23,17 +24,8 @@ bottom_align = config.get("DEFAULT", "bottom_align")
 bottom_align = set([n.strip() for n in bottom_align])
 punctuation = eval(config.get("DEFAULT", "punctuation"))
 invalid_symbols = eval(config.get("DEFAULT", "invalidSymbols"))
-
-# chars = config.get('DEFAULT', 'Symbols')
-# RusAndPunc = config.get('DEFAULT', 'RusAndPunc')
-# EngAndPunc = config.get('DEFAULT', 'EngAndPunc')
-#
-# chars = set([n.strip() for n in chars])
-# RusAndPunc = set([n.strip() for n in RusAndPunc])
-# EngAndPunc = set([n.strip() for n in EngAndPunc])
-
-# chars = config.get('DEFAULT', 'Symbols')
-# chars = set([n.strip() for n in chars])
+images_folder = config.get("FOLDERS", "images_folder")
+fonts_folder = config.get("FOLDERS", "fonts_folder")
 
 dontaug = ast.literal_eval(config.get("DEFAULT", "dont_aug"))
 
@@ -274,7 +266,7 @@ def aug_imgs(path, savefolder):
             p.sample(filesize(imgspath) * 3)
 
 
-def add_noise(path="imgs/outputTrain"):
+def add_noise(path=images_folder + "/outputTrain"):
     subfolders = glob.glob(path + "/*")
     for subfolder in subfolders:
         if subfolder.split('\\')[-1] in dontaug:
@@ -297,8 +289,6 @@ def generateAugedImgs(imgsfolder, augmentedSave):
     aug_imgs(imgsfolder, augmentedSave)
 
 
-
-
 def prepdata(charPool = 'RusEng'):
     assert charPool == 'RusEng' or charPool == 'Eng' or charPool == 'Rus', 'no such charPool'
     if charPool == 'RusEng':
@@ -313,11 +303,39 @@ def prepdata(charPool = 'RusEng'):
 
     # generateimgs("imgs/trainimgs", "fonts/fontstrain")
     # generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
-    generateimgs("imgs/train_and_val", "fonts/fonts")
-    generateimgs("imgs/testimgs", "fonts/fontstest")
-    generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
+    # generateimgs("imgs/train_and_val", "fonts/fonts")
+    # generateimgs("imgs/testimgs", "fonts/fontstest")
+    # generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
+    generateimgs(images_folder + "/images", fonts_folder)
+    splitfolders.ratio(images_folder + "/images", output=images_folder + "/output", ratio=(0.7, 0.2, 0.1), move=False)
+    test_from_train()
     # generateAugedImgs("imgs/trainimgs", "outputTrain")
     # add_noise()
+
+
+def test_from_train():
+    k = 0
+    dir = images_folder + "/output/train"
+    for src_dir, dirs, files in os.walk(dir):
+        # dst_dir = src_dir.replace(dir, "img\\output\\test_from_train", 1)
+        dst_dir = src_dir.replace(dir, images_folder + "/output/test_from_train", 1)
+        if not os.path.exists(dst_dir):
+            os.makedirs(dst_dir)
+        if 'test_from_train' in dst_dir.split('\\')[-1]:
+            continue
+
+        list_of_imgs = list(Path(src_dir).rglob('*' + '.png'))
+
+        if k == 0:
+            k = int(len(list_of_imgs) * 0.2)
+
+        pngs = random.sample(files, k=k)
+        for file_ in pngs:
+            src_file = os.path.join(src_dir, file_)
+            dst_file = os.path.join(dst_dir, file_)
+            if os.path.exists(dst_file):
+                os.remove(dst_file)
+            shutil.copy(src_file, dst_dir)
 
 
 def listFonts(fontfolder):
