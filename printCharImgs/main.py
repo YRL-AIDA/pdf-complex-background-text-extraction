@@ -1,5 +1,5 @@
-from DataPrepare import prepdata
-from DataPrepare import listFonts
+from model.data_prepare import prepdata
+from model.data_prepare import listFonts
 
 from PDFData import gettext
 # prepdata()

@@ -14,7 +14,7 @@ from fontTools.agl import toUnicode
 
 # from CNN_modelclass import CNN
 from CNN_modelclass import CNN
-from DrawGlyph import drawglyph_by_pen
+from font_recognition.draw_glyph import drawglyph_by_pen
 from Analize import correct_text
 
 config = configparser.ConfigParser()

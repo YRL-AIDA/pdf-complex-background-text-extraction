@@ -12,7 +12,7 @@ from fontTools.ttLib import TTFont
 import cv2
 from skimage.util import random_noise
 import ast
-from DrawGlyph import drawglyph_pillow, drawglyph_bypen_and_code, drawglyph_by_pen
+from font_recognition.draw_glyph import drawglyph_pillow, drawglyph_bypen_and_code, drawglyph_by_pen
 import splitfolders
 from os import listdir
 from os.path import isfile, join
@@ -289,7 +289,7 @@ def generateAugedImgs(imgsfolder, augmentedSave):
     aug_imgs(imgsfolder, augmentedSave)
 
 
-def prepdata(charPool = 'RusEng'):
+def prepdata(fonts_path, charPool = 'RusEng'):
     assert charPool == 'RusEng' or charPool == 'Eng' or charPool == 'Rus', 'no such charPool'
     if charPool == 'RusEng':
         ininame = 'Symbols'
@@ -300,17 +300,9 @@ def prepdata(charPool = 'RusEng'):
     global chars
     chars = config.get('DEFAULT', ininame)
     chars = set([n.strip() for n in chars])
-
-    # generateimgs("imgs/trainimgs", "fonts/fontstrain")
-    # generateimgs("imgs/validationimgs", "fonts/fontsvalidation")
-    # generateimgs("imgs/train_and_val", "fonts/fonts")
-    # generateimgs("imgs/testimgs", "fonts/fontstest")
-    # generateimgs("imgs/testfromtrain", "fonts/fontstrain", isTestFromTrain=True)
     generateimgs(images_folder + "/images", fonts_folder)
     splitfolders.ratio(images_folder + "/images", output=images_folder + "/output", ratio=(0.7, 0.2, 0.1), move=False)
     test_from_train()
-    # generateAugedImgs("imgs/trainimgs", "outputTrain")
-    # add_noise()
 
 
 def test_from_train():
