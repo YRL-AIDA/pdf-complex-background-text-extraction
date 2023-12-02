@@ -6,7 +6,7 @@
 *.cff
 *.pyc
 printCharImgs/freetype/
-printCharImgs/.idea/misc.xml
+printCharImgs/.idea/
 *.h5
 *.fon
 *.ttc
