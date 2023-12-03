@@ -5,7 +5,7 @@ import re
 from typing import List
 
 config = configparser.ConfigParser()
-config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
 config.read(config_p, encoding='utf-8')
 convertdictrus = eval(config.get("DEFAULT", "convert_chars_to_rus"))
 convertdicteng = eval(config.get("DEFAULT", "convert_chars_to_eng"))
@@ -14,23 +14,22 @@ eng = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'
 onlyRus = ['я', 'й', 'ц', 'б', 'ж', 'з', 'д', 'л', 'ф', 'ш', 'щ', "ч", "ъ", "ь", "э", "ю"]
 onlyEng = ['q', 'w', 'f', 'i', 'j', 'l', 'z', 's', 'v']
 
-def analize_string(string: str):
+
+def analise_string(string: str):
     strings = string.split(' ')
     ans = []
     for word in strings:
-        analized = analize_word(word)
+        analized = analise_word(word)
         if analized is not None:
-            ans.append(analize_word(word))
+            ans.append(analise_word(word))
     return " ".join(ans)
 
 
-def analize_word(string: str):
+def analise_word(string: str):
     l = list(string)
     letters = {x: string.count(x) for x in string}
     latin = sum([val for val, key in zip(letters.values(), letters.keys()) if key in eng])
     cyrrilic = sum([val for val, key in zip(letters.values(), letters.keys()) if key in rus])
-
-
 
     converted = string
     if (cyrrilic >= latin and latin + cyrrilic > 0) or any(char in string for char in onlyRus):
@@ -44,6 +43,6 @@ def correct_text(text: List[str]):
     corrected_text = []
     for page in text:
         if not page.isspace():
-            res = analize_string(page)
+            res = analise_string(page)
             corrected_text.append(res)
     return corrected_text

@@ -14,8 +14,8 @@ from fontTools.agl import toUnicode
 
 # from CNN_modelclass import CNN
 from CNN_modelclass import CNN
-from font_recognition.draw_glyph import drawglyph_by_pen
-from Analize import correct_text
+from font_action.draw_glyph import drawglyph_by_pen
+from text_action.analize import correct_text
 
 config = configparser.ConfigParser()
 config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
@@ -352,7 +352,7 @@ def visitor_body(text, cm, tm, font_dict, font_size):
             parts.append((font_dict['/BaseFont'].split('/')[-1], text))
 
 
-def gettext(pdf_path, mode='RusEng', startpage=0, endpage=0):
+def gettext(pdf_path, mode='rus_eng_no_reg_diff', startpage=0, endpage=0):
     # txt_path = __save_pdf_as_txt(pdf_path)
     # firstchars = get_encoding(txt_path)
     # charsOffonts = getCharsOfFonts(pdf_path)
@@ -364,6 +364,6 @@ def gettext(pdf_path, mode='RusEng', startpage=0, endpage=0):
     __extract_pfdfonts(pdf_path)
     __draw_glyphs()
     text = __gettextfrompdf(pdf_path, __match_glyphs_and_encoding_forall(mode), start=startpage, end=endpage)
-    if mode == 'RusEng':
+    if 'rus_eng' in mode:
         text = correct_text(text)
     return text
