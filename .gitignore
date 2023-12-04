@@ -10,3 +10,8 @@ printCharImgs/.idea/
 *.h5
 *.fon
 *.ttc
+printCharImgs/data/datasets
+printCharImgs/data/logs
+printCharImgs/data/models_and_classnames
+printCharImgs/data/pdf
+printCharImgs/data/pdfdata

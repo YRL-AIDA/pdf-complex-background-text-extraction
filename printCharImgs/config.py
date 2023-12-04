@@ -1,5 +1,8 @@
 import glob
 import os
+from keras.models import load_model
+
+import enum
 
 from main import ROOT_DIR
 
@@ -56,6 +59,7 @@ folders = dict(
     fonts_folder=os.path.join(ROOT_DIR, "data/fonts/fonts"),
     # images_folder="data/datasets/images",
     images_folder=os.path.join(ROOT_DIR, "data/datasets/images"),
+    output_train=os.path.join(ROOT_DIR, "data/datasets/images/output"),
     extracted_data_folder=os.path.join(ROOT_DIR, "data/pdfdata"),
     extracted_fonts_folder=os.path.join(ROOT_DIR, "data/pdfdata/extracted_fonts"),
     extracted_glyphs_folder=os.path.join(ROOT_DIR, "data/pdfdata/glyph_images"),
@@ -65,6 +69,22 @@ folders = dict(
     # custom_models_folder="data/models_and_classnames",
 )
 
-default_models = [i.split('\\')[-1].split('.')[0] for i in glob.glob(os.path.join(folders.get('default_models_folder'), "*.h5"))]
+default_models = [i.split('\\')[-1].split('.')[0] for i in
+                  glob.glob(os.path.join(folders.get('default_models_folder'), "*.h5"))]
 default_models_and_labels = {i: {"model_name": i + ".h5", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
                              i in default_models}
+
+
+class Language(enum.Enum):
+    Russian_and_English = char_pool['rus_eng_no_reg_diff']
+    Russian = char_pool['rus_no_reg_diff']
+    English = char_pool['eng_no_reg_diff']
+
+
+class DefaultModel(enum.Enum):
+    Russian_and_English = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_eng.h5')),
+                           'labels': Language.Russian_and_English.value}
+    Russian = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus.h5')),
+               'labels': Language.Russian.value}
+    English = {'model': load_model(os.path.join(folders['default_models_folder'], 'eng.h5')),
+               'labels': Language.English.value}

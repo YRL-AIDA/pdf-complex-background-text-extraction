@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 from tensorflow import keras
 from keras import layers
+from keras.callbacks import TensorBoard
 
 
 class Trainer:
@@ -15,7 +16,7 @@ class Trainer:
         self.path = None
         self.num_classes = None
 
-    def train(self, data_path, image_size, batch_size, epochs):
+    def train(self, data_path, image_size, batch_size, epochs, logs_path):
         assert os.path.exists(data_path)
         self.__init__()
         self.w, self.h = image_size
@@ -28,7 +29,11 @@ class Trainer:
             self.set_model()
         self.seq_model.summary()
         self.seq_model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
-        self.seq_model.fit(train_ds, validation_data=validation_ds, batch_size=batch_size, epochs=epochs)
+
+        tensorboard = TensorBoard(log_dir=logs_path, histogram_freq=0, write_graph=True, write_images=True)
+
+        self.seq_model.fit(train_ds, validation_data=validation_ds, batch_size=batch_size, epochs=epochs,
+                           callbacks=[tensorboard])
         # labels = [int(i) for i in train_ds.class_names]
         labels = train_ds.class_names
         return self.seq_model, labels
@@ -90,4 +95,3 @@ class Trainer:
             )
         else:
             self.seq_model = model
-

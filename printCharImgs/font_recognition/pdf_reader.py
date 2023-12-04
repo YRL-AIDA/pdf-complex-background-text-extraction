@@ -14,9 +14,13 @@ from font_action.draw_glyph import drawglyph_by_pen
 class PDFReader:
     def __init__(self, data_save_path):
         self.path = None
-        self.data_save_path = os.path.join(main.ROOT_DIR, data_save_path)
-        self.fonts_path = os.path.join(self.data_save_path, "extracted_fonts")
-        self.glyphs_path = os.path.join(self.data_save_path, "glyph_images")
+        # self.data_save_path = os.path.join(main.ROOT_DIR, data_save_path)
+        # self.data_save_path =
+
+        # self.fonts_path = os.path.join(self.data_save_path, "extracted_fonts")
+        self.fonts_path = config.folders.get('extracted_fonts_folder')
+        # self.glyphs_path = os.path.join(self.data_save_path, "glyph_images")
+        self.glyphs_path = config.folders.get('extracted_glyphs_folder')
 
     def read(self, path):
         self.path = path
