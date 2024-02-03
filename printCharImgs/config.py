@@ -53,7 +53,6 @@ convert = dict(
     convert_chars_to_eng={"а": "a"}
 )
 
-
 folders = dict(
     # fonts_folder="data/fonts/fonts",
     fonts_folder=os.path.join(ROOT_DIR, "data/fonts/fonts"),
@@ -75,6 +74,15 @@ default_models_and_labels = {i: {"model_name": i + ".h5", "labels": sorted([str(
                              i in default_models}
 
 
+def chars_to_code(char_list: list):
+    return [ord(i) for i in char_list]
+
+
+# class Language(enum.Enum):
+#     Russian_and_English = chars_to_code(char_pool['rus_eng_no_reg_diff'])
+#     Russian = chars_to_code(char_pool['rus_no_reg_diff'])
+#     English = chars_to_code(char_pool['eng_no_reg_diff'])
+
 class Language(enum.Enum):
     Russian_and_English = char_pool['rus_eng_no_reg_diff']
     Russian = char_pool['rus_no_reg_diff']
@@ -88,3 +96,6 @@ class DefaultModel(enum.Enum):
                'labels': Language.Russian.value}
     English = {'model': load_model(os.path.join(folders['default_models_folder'], 'eng.h5')),
                'labels': Language.English.value}
+
+
+

@@ -14,18 +14,12 @@ from font_action.draw_glyph import drawglyph_by_pen
 class PDFReader:
     def __init__(self, data_save_path):
         self.path = None
-        # self.data_save_path = os.path.join(main.ROOT_DIR, data_save_path)
-        # self.data_save_path =
-
-        # self.fonts_path = os.path.join(self.data_save_path, "extracted_fonts")
         self.fonts_path = config.folders.get('extracted_fonts_folder')
-        # self.glyphs_path = os.path.join(self.data_save_path, "glyph_images")
         self.glyphs_path = config.folders.get('extracted_glyphs_folder')
+        self.white_spaces = {}
 
     def read(self, path):
         self.path = path
-        # self.fonts_path = os.path.join(self.data_save_path, "extracted_fonts")
-        # self.glyphs_path = os.path.join(self.data_save_path, "glyph_images")
         self.__extract_fonts()
         self.__draw_glyphs()
 
@@ -35,6 +29,7 @@ class PDFReader:
         os.makedirs(self.glyphs_path)
         font_files = os.listdir(os.fsencode(self.fonts_path))
         counter = 0
+        whitespaces = {}
         for font_file in font_files:
             fontname = os.fsdecode(font_file)
             font = TTFont(self.fonts_path + "/" + fontname)
@@ -60,10 +55,14 @@ class PDFReader:
             #         continue
             #     size = max(size, abs(bp.bounds[1]) + abs(bp.bounds[3]))
             #     minsize = min(minsize, abs(bp.bounds[1]) + abs(bp.bounds[3]))
+            font_whitespaces = []
+            # print(fontname)
+            # print(charlist)
             for g in charlist:
                 img = drawglyph_by_pen(ttfont=font, glyph_name=g, size=size, minsize=minsize)
-                if img is None:
-                    continue
+                # if img is None:
+                #     # font_whitespaces.append(pngname)
+                #     continue
                 if g[0] == '.':
                     continue
 
@@ -71,12 +70,19 @@ class PDFReader:
                     g = chr(cmap[g])
                 if 'uni' in g:
                     g = toUnicode(g)
+                pngname = str(ord(g))
+                if img is None:
+                    font_whitespaces.append(chr(int(pngname)))
+                    continue
                 # elif g in invalid_symbols:
                 #     g = invalid_symbols[g]
                 # pngname = g + "_lower" if g.islower() else g + "_upper" if g.isupper() else g
-                pngname = str(ord(g))
                 img.save(self.glyphs_path + "/" + to_save_folder + "/" + pngname + ".png")
                 counter += 1
+            whitespaces[fontname.split('.')[0]] = font_whitespaces
+
+        print(whitespaces)
+        self.white_spaces = whitespaces
 
     def __extract_fonts(self):
         if os.path.isdir(self.fonts_path):

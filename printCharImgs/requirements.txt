@@ -10,3 +10,4 @@ opencv-python
 scikit-image
 tensorflow
 split-folders
+pdfreader

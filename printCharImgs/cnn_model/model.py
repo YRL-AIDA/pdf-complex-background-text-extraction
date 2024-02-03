@@ -49,10 +49,13 @@ class Model:
 
     @classmethod
     def load_default_model(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
-        print(default_model)
         new_model = cls()
-        new_model.weights = default_model.Russian_and_English.value['model']
-        new_model.labels = default_model.Russian_and_English.value['labels']
+        new_model.weights = default_model.value['model']
+
+        # labels = [ord(i) for i in sorted(default_model.Russian_and_English.value['labels'])]
+        # s = default_model.value['labels']
+        s = sorted(default_model.value['labels'], key=lambda i: str(ord(i)))
+        new_model.labels = [ord(i) for i in s]
         # print(new_model.weights.layers[-1].output_shape)
         new_model.__assert_labels_and_model()
         return new_model
@@ -70,7 +73,6 @@ class Model:
 
     @classmethod
     def load_by_h5_and_json_folder(cls, h5_and_json_folder):
-        print(len([name for name in os.listdir(h5_and_json_folder) if os.path.isfile(name)]))
         assert len(glob.glob(os.path.join(h5_and_json_folder, "*"))) == 2
         h5_path = glob.glob(os.path.join(h5_and_json_folder, "*.h5"))[0]
         json_path = glob.glob(os.path.join(h5_and_json_folder, "*.json"))[0]
@@ -120,7 +122,8 @@ class Model:
         img = np.array(img).reshape(-1, 28, 28, 1)
         probs = self.weights.predict(img, verbose=0)
         problabels = probs.argmax(axis=-1)
-        return self.labels[problabels[0]]
+        prediction = self.labels[problabels[0]]
+        return prediction
 
     def bb(self):
         png = "D:\\rep\\fonts-recognition\\printCharImgs\\images\\output\\test\\8\\8_259.png"
@@ -142,8 +145,9 @@ class Model:
         os.makedirs(p)
         files_path = os.path.join(p, name)
         self.weights.save(files_path + ".h5")
+        char_labels = [chr(i) for i in self.labels]
         with open(files_path + ".json", 'w') as f:
-            json.dump(self.labels, f)
+            json.dump(char_labels, f)
 
         logs = os.listdir(self.logs_path)
         for log in logs:

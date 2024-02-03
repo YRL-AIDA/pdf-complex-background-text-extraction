@@ -1,5 +1,6 @@
 import glob
 import os
+import string
 
 import fitz
 from fontTools.agl import toUnicode
@@ -43,11 +44,15 @@ class FontRecognizer:
     #     self.text = None
 
     def __init__(self, model: Model):
+        self.reader = PDFReader(config.folders.get("extracted_data_folder"))
         self.model = model
+        self.default_model = None
+        self.text = None
 
     @classmethod
     def create_with_default_mode(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
         new_model = Model.load_default_model(default_model=default_model)
+        new_model.default_model = default_model
         return cls(model=new_model)
 
     @classmethod
@@ -55,7 +60,7 @@ class FontRecognizer:
         assert len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))]) == 2, \
             "should be two files in folder: h5, json"
         # print(len([name for name in os.listdir(h5_and_json_folder) if os.path.isfile(name)]))
-        print(len([name for name in os.listdir(path) if os.path.isfile(name)]))
+        # print(len([name for name in os.listdir(path) if os.path.isfile(name)]))
         new_model = Model.load_model_and_labels(model_path=glob.glob(path + "/*.h5")[0],
                                                 model_labels_path=glob.glob(path + "/*.json")[0])
         return cls(new_model)
@@ -71,8 +76,9 @@ class FontRecognizer:
         self.reader.read(pdf_path)
         self.text = self.__restore_text(pdf_path, self.__match_glyphs_and_encoding_for_all(), start=start_page,
                                         end=end_page)
-        if self.default_model_lang == 'rus_eng':
+        if self.default_model is DefaultModel.Russian_and_English:
             self.text = text_action.analize.correct_text(self.text)
+        print(self.text)
 
     def save_text(self, path):
         with open(path, "w") as f:
@@ -90,7 +96,8 @@ class FontRecognizer:
         pages = [doc[i] for i in range(start, end)]
         for page in pages:
             sentence = ""
-            for blocks in page.get_text("dict")['blocks']:
+            #1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 65 67 69 71 73 75 77 79 81 83 85 87 89 91 93 95 ** Process exited - Return Code: 0 ** Press Enter to exit terminal
+            for blocks in page.get_text("dict", flags=95)['blocks']:
                 try:
                     for lines in blocks['lines']:
                         line_text = ""
@@ -100,14 +107,28 @@ class FontRecognizer:
                                 try:
                                     if char in dictionary[spans['font']]:
                                         word += dictionary[spans['font']][char]
+                                    elif char in self.reader.white_spaces[spans['font'].split('.')[0]]:
+                                        word += " "
                                     else:
+                                        # print(spans['font'], char)
                                         word += char
+                                        # word += "|"+spans['font']+"|"
                                 except KeyError:
                                     word += char
                             line_text += word
-                        line_text = line_text.lstrip(' ')
+                        line_text = line_text.lstrip(' ').rstrip(' ')
                         sentence += line_text
-                        sentence += "\n"
+                        # print(sentence[-1] == "\n")
+                        if len(sentence) >= 2 and sentence[-1] == "\n" and sentence[-2] == "\n":
+                            continue
+                        # if len(line_text) > 0 and line_text[-1] not in string.punctuation:
+                        #     sentence += " "
+                        #     continue
+                        sentence += '\n'
+
+                        # if sentence[-1] in string.punctuation:
+                        #     sentence += '\n'
+
                 except KeyError:
                     pass
             text.append(sentence)
@@ -120,7 +141,7 @@ class FontRecognizer:
         # extracted_fonts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), extracted_fonts_folder)
         # extracted_fonts_folder = os.path.join(ROOT_DIR, extracted_fonts_folder)
         fonts = glob.glob(extracted_fonts_folder + "/*")
-        print(fonts)
+        # print(fonts)
         dicts = {}
         for font_file in fonts:
             # print(font_file)
@@ -135,7 +156,7 @@ class FontRecognizer:
                                                                                                        dicts[
                                                                                                            font_name_images.split(
                                                                                                                '+')[1]]
-        print(dicts)
+        # print(dicts)
         return dicts
 
     def __match_glyphs_and_encoding(self, ttf_font, fitz_font, images):
@@ -150,10 +171,13 @@ class FontRecognizer:
 
         for img in images:
             key = ((img.split('\\')[-1]).split('.')[0]).split('_')[0]
+            # print(key, type(key))
+            # print(int(key))
             pred = self.model.recognize_glyph(img)
+
             if key in inv_cmap:
                 key = chr(inv_cmap[key])
-
+            # print(pred)
             dictionary[chr(int(key))] = chr(int(pred))
         # print(dictionary)
         return dictionary
