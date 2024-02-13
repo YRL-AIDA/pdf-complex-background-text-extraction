@@ -57,7 +57,7 @@ folders = dict(
     # fonts_folder="data/fonts/fonts",
     fonts_folder=os.path.join(ROOT_DIR, "data/fonts/fonts"),
     # images_folder="data/datasets/images",
-    images_folder=os.path.join(ROOT_DIR, "data/datasets/images"),
+    images_folder=os.path.join(ROOT_DIR, "data/datasets/test2"),
     output_train=os.path.join(ROOT_DIR, "data/datasets/images/output"),
     extracted_data_folder=os.path.join(ROOT_DIR, "data/pdfdata"),
     extracted_fonts_folder=os.path.join(ROOT_DIR, "data/pdfdata/extracted_fonts"),
@@ -84,18 +84,18 @@ def chars_to_code(char_list: list):
 #     English = chars_to_code(char_pool['eng_no_reg_diff'])
 
 class Language(enum.Enum):
-    Russian_and_English = char_pool['rus_eng_no_reg_diff']
-    Russian = char_pool['rus_no_reg_diff']
-    English = char_pool['eng_no_reg_diff']
+    Russian_and_English_no_reg_diff = char_pool['rus_eng_no_reg_diff']
+    Russian_no_reg_diff = char_pool['rus_no_reg_diff']
+    English_no_reg_diff = char_pool['eng_no_reg_diff']
+    Russian_and_English = char_pool['rus_eng']
+    Russian = char_pool['rus']
+    English = char_pool['eng']
 
 
 class DefaultModel(enum.Enum):
     Russian_and_English = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_eng.h5')),
-                           'labels': Language.Russian_and_English.value}
+                           'labels': Language.Russian_and_English_no_reg_diff.value}
     Russian = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus.h5')),
-               'labels': Language.Russian.value}
+               'labels': Language.Russian_no_reg_diff.value}
     English = {'model': load_model(os.path.join(folders['default_models_folder'], 'eng.h5')),
-               'labels': Language.English.value}
-
-
-
+               'labels': Language.English_no_reg_diff.value}

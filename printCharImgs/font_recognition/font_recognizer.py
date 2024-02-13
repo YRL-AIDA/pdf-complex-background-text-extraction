@@ -1,6 +1,5 @@
 import glob
 import os
-import string
 
 import fitz
 from fontTools.agl import toUnicode
@@ -50,7 +49,7 @@ class FontRecognizer:
         self.text = None
 
     @classmethod
-    def create_with_default_mode(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
+    def load_default_model(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
         new_model = Model.load_default_model(default_model=default_model)
         new_model.default_model = default_model
         return cls(model=new_model)
@@ -76,63 +75,89 @@ class FontRecognizer:
         self.reader.read(pdf_path)
         self.text = self.__restore_text(pdf_path, self.__match_glyphs_and_encoding_for_all(), start=start_page,
                                         end=end_page)
+        # print(self.text)
         if self.default_model is DefaultModel.Russian_and_English:
-            self.text = text_action.analize.correct_text(self.text)
-        print(self.text)
+            # self.text = text_action.analize.correct_text(self.text)
+            self.text = text_action.analize.correct_text_str(self.text)
+        # print(self.text)
+        return self.text
 
     def save_text(self, path):
         with open(path, "w") as f:
             f.write(self.text)
 
     def print_text(self):
+        # return
         for i in self.text:
             print(i)
 
     def __restore_text(self, pdf_path, dictionary, start=0, end=0):
         doc = fitz.open(pdf_path)
         text = []
+        text_str = ""
         if end == 0:
             end = doc.page_count
         pages = [doc[i] for i in range(start, end)]
         for page in pages:
             sentence = ""
-            #1 3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 65 67 69 71 73 75 77 79 81 83 85 87 89 91 93 95 ** Process exited - Return Code: 0 ** Press Enter to exit terminal
             for blocks in page.get_text("dict", flags=95)['blocks']:
                 try:
                     for lines in blocks['lines']:
                         line_text = ""
                         for spans in lines['spans']:
                             word = ""
-                            for index, char in enumerate(spans['text']):
+                            # print(spans['text'])
+                            if 'text' in spans:
+                                d = spans['text'] = spans['text'].replace('\r', '')
+                                w = 1
+                            for index, char in enumerate(d):
+                                # if char == '\r':
+                                #     continue
+                                # if char == '\t':
+                                #     char = ' '
+                                # print(char, spans['font'])
+                                # print(spans['text'])
+                                # Gonzalo
+                                # сq}zz=q
                                 try:
                                     if char in dictionary[spans['font']]:
+                                        # print(char, dictionary[spans['font']][char], spans['font'], dictionary)
                                         word += dictionary[spans['font']][char]
                                     elif char in self.reader.white_spaces[spans['font'].split('.')[0]]:
                                         word += " "
                                     else:
-                                        # print(spans['font'], char)
                                         word += char
-                                        # word += "|"+spans['font']+"|"
+                                        # word += '□'
+                                    # print(char, spans['font'])
                                 except KeyError:
+                                    # word += '*'
                                     word += char
                             line_text += word
                         line_text = line_text.lstrip(' ').rstrip(' ')
                         sentence += line_text
-                        # print(sentence[-1] == "\n")
+                        # print(sentence)
+                        if line_text:
+                            sentence += ' '
                         if len(sentence) >= 2 and sentence[-1] == "\n" and sentence[-2] == "\n":
                             continue
                         # if len(line_text) > 0 and line_text[-1] not in string.punctuation:
                         #     sentence += " "
                         #     continue
-                        sentence += '\n'
+
+                        #ne nado
+                        # sentence += '\n'
 
                         # if sentence[-1] in string.punctuation:
                         #     sentence += '\n'
-
+                    # sentence += ' '
+                    # sentence = sentence.strip()
                 except KeyError:
                     pass
-            text.append(sentence)
-        return text
+            # print("sentence", sentence)
+            sentence = sentence.strip()
+            # text.append(sentence)
+            text_str += sentence
+        return text_str
 
     def __match_glyphs_and_encoding_for_all(self):
         img_folders = self.reader.get_glyphs_path()
@@ -144,7 +169,6 @@ class FontRecognizer:
         # print(fonts)
         dicts = {}
         for font_file in fonts:
-            # print(font_file)
             fontname = font_file.split('\\')[-1]
             ttf_font = TTFont(font_file)
             fitz_font = fitz.Font(fontfile=font_file)
@@ -152,7 +176,9 @@ class FontRecognizer:
             # matching_res = self.__match_glyphs_and_encoding(ttf_font, fitz_font, img_folders + font_name_images)
             matching_res = self.__match_glyphs_and_encoding(ttf_font, fitz_font,
                                                             os.path.join(img_folders, font_name_images))
-            dicts[font_name_images] = matching_res if font_name_images.split('+')[1] not in dicts else matching_res | \
+            # print(font_file, font_name_images)
+            font_name_without_prefix = font_name_images.split('+')[1] if '+' in font_name_images else font_name_images
+            dicts[font_name_images] = matching_res if font_name_without_prefix not in dicts else matching_res | \
                                                                                                        dicts[
                                                                                                            font_name_images.split(
                                                                                                                '+')[1]]
@@ -174,9 +200,11 @@ class FontRecognizer:
             # print(key, type(key))
             # print(int(key))
             pred = self.model.recognize_glyph(img)
-
+            # print(key)
             if key in inv_cmap:
                 key = chr(inv_cmap[key])
+            # print(key, chr(int(key)), pred, chr(int(pred)))
+            # print(key, chr(key))
             # print(pred)
             dictionary[chr(int(key))] = chr(int(pred))
         # print(dictionary)

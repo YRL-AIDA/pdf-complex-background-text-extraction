@@ -1,10 +1,14 @@
+import ast
 import glob
 import os
 import random
 import shutil
+import subprocess
+import warnings
 from pathlib import Path
 import Augmentor
-from PIL import ImageFont
+import PIL.ImageOps
+from PIL import ImageFont, Image
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 import cv2
@@ -14,6 +18,8 @@ import splitfolders
 from os import listdir
 from os.path import isfile, join
 import config
+from src import utils
+
 # images_folder = ""
 
 bottom_align = config.other.get('bottom_align')
@@ -78,7 +84,6 @@ def aug_imgs(path, savefolder):
 
 
 def add_noise(train_path):
-
     subfolders = glob.glob(train_path + "/*")
     for subfolder in subfolders:
         if subfolder.split('\\')[-1] in dontaug:
@@ -92,9 +97,73 @@ def add_noise(train_path):
                     cv2.imwrite(imgpath, 255 * img)
 
 
+def generate_imgs_fontforge(save_imgs_folder, font_folder, char_pool):
+    fonts_dir = f"{font_folder}/"
+    if os.path.isdir(save_imgs_folder):
+        shutil.rmtree(save_imgs_folder)
+    os.makedirs(save_imgs_folder)
+    uni_char_pool = [str(ord(char)) for char in char_pool]
+    for char in char_pool:
+        os.makedirs(save_imgs_folder + "/" + str(ord(char)))
+
+    counter = 0
+    font_files = os.listdir(fonts_dir)
+    warnings.filterwarnings("ignore", category=Warning)
+    for font_file in font_files:
+        font_name = os.fsdecode(font_file)
+        font_file_path = fr'"{font_folder}/{font_file}"'
+        # for char in char_pool:
+        #     try:
+        #         DEVNULL = open(os.devnull, 'wb')
+        #         result = subprocess.check_output(
+        #             f"ffpython  -W ignore ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {ord(char)} {counter} True", stderr=DEVNULL)
+        #     except:
+        #         # print("problem", char, font_file)
+        #         continue
+        #     result = result.decode('utf-8').replace('\r\n', '')
+        #     if result == "None":
+        #         continue
+        #     handle_image(result)
+        try:
+            print(font_name)
+            DEVNULL = open(os.devnull, 'wb')
+            # result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {counter} True", stderr=DEVNULL)
+            # result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {counter} True {' '.join(uni_char_pool)}", stderr=DEVNULL)
+            result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py True {save_imgs_folder} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
+            #result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, font_file_path, counter, "True"] + uni_char_pool)
+            # result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, font_file_path, str(counter), "True"] + uni_char_pool)
+            # result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, r'"D:/rep/fonts-recognition/printCharImgs/data/fonts/check/Bebas Neue Cyrillic.otf"', str(counter), "True", "q"])
+        except:
+            continue
+        result = result.decode('utf-8')
+        result = ast.literal_eval(result)
+        for img in result:
+            handle_image(img)
+        counter += 1
+
+
+def handle_image(image_path, size: tuple = (28, 28)):
+    im = Image.open(image_path)
+    # im = PIL.ImageOps.invert(im)
+    # im.thumbnail((28, 28), Image.LANCZOS)
+    # im.show()
+    new_image = Image.new("L", size, color=255)
+    x_offset = (new_image.size[0] - im.size[0]) // 2
+    y_offset = (new_image.size[1] - im.size[1]) // 2
+    new_image.paste(im, (x_offset, y_offset))
+    new_image = PIL.ImageOps.invert(new_image)
+    # new_image.show()
+    new_image.save(image_path)
+    # im.save(image_path)
+
+    # im = im.resize(size, Image.LANCZOS)
+    # im.save(image_path)
+
+
 def generate_imgs(save_imgs_folder, font_folder, char_pool):
     img_width, img_height = 28, 28
-    fonts_dir = "./" + font_folder + "/"
+    # fonts_dir = "./" + font_folder + "/"
+    fonts_dir = font_folder + "/"
 
     if os.path.isdir(save_imgs_folder):
         shutil.rmtree(save_imgs_folder)
@@ -155,16 +224,28 @@ def generateAugedImgs(imgsfolder, augmentedSave):
 def prepdata(fonts_path, data_save_path, char_pool):
     images_folder = data_save_path
 
-    generate_images_path = images_folder + "/images"
-    output_path = images_folder + "/output"
+    # generate_images_path = images_folder + "/images"
+    # output_path = images_folder + "/output"
+    generate_images_path = f"{images_folder}/images"
+    output_path = f"{images_folder}/output"
 
     generate_imgs(generate_images_path, fonts_path, char_pool)
     if os.path.exists(images_folder + "/output"):
         shutil.rmtree(images_folder + "/output")
     splitfolders.ratio(generate_images_path, output=output_path, ratio=(0.7, 0.2, 0.1), move=False)
 
-    train_path = output_path + "/train"
-    test_from_train(train_path)
+    # train_path = output_path + "/train"
+    # test_from_train(train_path)
+
+
+def prepdata_fontforge(fonts_path, data_save_path, char_pool):
+    images_folder = data_save_path
+    generate_images_path = f"{images_folder}/images"
+    output_path = f"{images_folder}/output"
+    generate_imgs_fontforge(generate_images_path, fonts_path, char_pool)
+    if os.path.exists(images_folder + "/output"):
+        shutil.rmtree(images_folder + "/output")
+    splitfolders.ratio(generate_images_path, output=output_path, ratio=(0.7, 0.2, 0.1), move=False)
 
 
 def test_from_train(train_path):
@@ -189,4 +270,3 @@ def test_from_train(train_path):
             if os.path.exists(dst_file):
                 os.remove(dst_file)
             shutil.copy(src_file, dst_dir)
-

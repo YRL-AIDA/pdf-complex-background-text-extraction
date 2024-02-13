@@ -11,6 +11,7 @@ config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini'
 config.read(config_p, encoding='utf-8')
 
 import config
+
 bottom_align = config.other.get('bottom_align')
 
 
@@ -19,11 +20,12 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     glyphset = ttfont.getGlyphSet()
     pen = FreeTypePen(glyphset)
     glyph = glyphset[glyph_name]
-    # a = glyphset['A']
     bp = BoundsPen(glyphset)
-    # bpa = BoundsPen(glyphset)
-    glyph.draw(bp)
-    # a.draw(bpa)
+    try:
+        glyph.draw(bp)
+    except:
+        # print(f'{glyph} has smth wrong')
+        return None
 
     if bp.bounds is None:
         return None
@@ -33,7 +35,10 @@ def drawglyph_by_pen(ttfont: TTFont, glyph_name, size, minsize):
     img = Image.alpha_composite(background.convert("RGBA"), img.convert("RGBA"))
     img = img.convert("L")
     # img.thumbnail((22, 22))
-    img.thumbnail((18, 18))
+    try:
+        img.thumbnail((18, 18))
+    except:
+        print('zero_division')
     img = ImageOps.invert(img)
     new_im = Image.new("L", (28, 28))
     box = tuple((n - o) // 2 for n, o in zip((28, 28), img.size))

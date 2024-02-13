@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from keras.models import load_model
 import tensorflow as tf
+from typing import List
 
 import config
 from config import Language, DefaultModel
@@ -14,6 +15,7 @@ from .trainer import Trainer
 from . import data_prepare
 from main import ROOT_DIR
 import json
+from typing import Union
 
 
 class Model:
@@ -62,21 +64,26 @@ class Model:
 
     @classmethod
     def load_model_and_labels(cls, model_path, model_labels_path):
-        assert model_path.split('/')[-1].split('\\')[-1].split('.')[-1] == 'h5'
+        assert model_path.split('/')[-1].split('\\')[-1].split('.')[-1] in ['h5', 'keras']
         assert model_labels_path.split('/')[-1].split('\\')[-1].split('.')[-1] == 'json'
         new_model = cls()
         new_model.weights = load_model(model_path)
         with open(model_labels_path, 'r') as j:
             new_model.labels = json.loads(j.read())
         new_model.__assert_labels_and_model()
+        # print(model_path, model_labels_path)
+        # print(new_model)
         return new_model
 
     @classmethod
-    def load_by_h5_and_json_folder(cls, h5_and_json_folder):
+    def load_by_model_and_labels_folder(cls, h5_and_json_folder):
         assert len(glob.glob(os.path.join(h5_and_json_folder, "*"))) == 2
-        h5_path = glob.glob(os.path.join(h5_and_json_folder, "*.h5"))[0]
+        model_path = \
+            (glob.glob(os.path.join(h5_and_json_folder, "*.h5")) + glob.glob(
+                os.path.join(h5_and_json_folder, "*.keras")))[
+                0]
         json_path = glob.glob(os.path.join(h5_and_json_folder, "*.json"))[0]
-        cls.load_model_and_labels(h5_path, json_path)
+        return cls.load_model_and_labels(model_path, json_path)
 
     def __assert_labels_and_model(self):
         assert self.weights.layers[-1].output_shape[-1] == len(self.labels)
@@ -89,6 +96,17 @@ class Model:
         assert os.path.exists(fonts_path), "no folder with fonts"
         self.data_path = data_save_path + "/output"
         data_prepare.prepdata(fonts_path, data_save_path, char_pool)
+
+    def prepare_data_fontforge(self, fonts_path=config.folders.get('fonts_folder'),
+                               data_save_path=config.folders.get("images_folder"),
+                               # char_pool: config.Language = Union[config.Language.Russian_and_English, List[str]]):
+                               char_pool: Union[config.Language, List[str]] = config.Language.Russian_and_English):
+        if type(char_pool) is config.Language:
+            char_pool = char_pool.value
+        assert os.path.exists(fonts_path), "no folder with fonts"
+        self.data_path = data_save_path + "/output"
+        data_prepare.prepdata_fontforge(fonts_path, data_save_path, char_pool)
+        # data_prepare.prepdata(fonts_path, data_save_path, char_pool)
 
     def train(self, data_path=None, image_size: tuple = (28, 28), batch_size=2000, epochs=100,
               logs_path=os.path.join(ROOT_DIR, "data", "logs")):
@@ -126,14 +144,17 @@ class Model:
         return prediction
 
     def bb(self):
-        png = "D:\\rep\\fonts-recognition\\printCharImgs\\images\\output\\test\\8\\8_259.png"
+        # png = "D:\\rep\\fonts-recognition\\printCharImgs\\images\\output\\test\\8\\8_259.png"
+        # png = "D:\\rep\\fonts-recognition\\printCharImgs\\data\\datasets\\123\\images\\33\\33_0.png"
+        png = "D:\\rep\\fonts-recognition\\printCharImgs\\data\\datasets\\123\\images\\37\\37_1.png"
         stream = open(png, "rb")
         bytes = bytearray(stream.read())
         numpyarray = np.asarray(bytes, dtype=np.uint8)
         img = cv2.imdecode(numpyarray, cv2.IMREAD_UNCHANGED)
         img = np.array(img).reshape(-1, 28, 28, 1)
-        probs = self.weights.predict(img, verbose=0)
+        probs = self.weights.predict(img)
         problabels = probs.argmax(axis=-1)
+        # print(self.weights.predict_classes(img))
         return self.labels[problabels[0]]
 
     def save(self, name):
@@ -144,11 +165,14 @@ class Model:
             shutil.rmtree(p)
         os.makedirs(p)
         files_path = os.path.join(p, name)
-        self.weights.save(files_path + ".h5")
-        char_labels = [chr(i) for i in self.labels]
+        self.weights.save(files_path + ".keras")
+        print(self.labels)
+        char_labels = [chr(int(i)) for i in self.labels]
+        print(char_labels)
         with open(files_path + ".json", 'w') as f:
             json.dump(char_labels, f)
 
-        logs = os.listdir(self.logs_path)
-        for log in logs:
-            shutil.move(os.path.join(self.logs_path, log), os.path.join(p, "logs"))
+        # logs = os.listdir(self.logs_path)
+        # print(logs)
+        # for log in logs:
+        #     shutil.move(os.path.join(self.logs_path, log), os.path.join(p, "logs"))

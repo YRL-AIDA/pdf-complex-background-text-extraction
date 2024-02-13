@@ -2,62 +2,16 @@ from cnn_model import Model
 from font_recognition import FontRecognizer
 from config import DefaultModel
 #
-fr_rus_eng = FontRecognizer.create_with_default_mode(DefaultModel.Russian_and_English)
-# fr_rus = FontRecognizer.c reate_with_default_mode(DefaultModel.Russian)
-# # fr_eng = FontRecognizer.create_with_default_mode(DefaultModel.English)
-# #
-# # # frs = [fr_rus_eng, fr_rus, fr_eng]
-# #
-p = "../data/pdf/"
-paths = [p + "1.pdf", p + "2.pdf", p + "3.pdf", p + "4.pdf"]
-# # fr_rus_eng.restore_text("../data/pdf/1.pdf")
-# # # fr_rus_eng.print_text()
-# #
-fr_rus_eng.restore_text(paths[2])
-# fr_rus_eng.print_text()
-
-from fontTools import t1Lib
-# f = fontforge.open("../data/pdfdata/extracted_fonts/ANTQUAI.pfa")
-# doc = t1Lib.T1Font(path="../data/pdfdata/extracted_fonts/IMXRQI+CMR8.pfa")
-# doc = t1Lib.T1Font(path="../data/pdfdata/extracted_fonts/ANTQUAI.pfa")
-
-
-import fitz
-# doc = fitz.open(paths[3])
-
-# print(doc[4].get_text("text"))
-# for blocks in doc[4].get_text("dict")['blocks']:
-#     print(blocks)
-#     print()
-
-# sent = ""
-# for blocks in doc[4].get_text("dict")['blocks']:
-#     print("new block")
-#     for lines in blocks['lines']:
-#         print("new line")
-#         line_text = ""
-#         for spans in lines['spans']:
-#             # print("new span")
-#             word = ""
-#             for index, char in enumerate(spans['text']):
-#                 word += char
-#             # print(word)
-#             line_text += word
-#         line_text = line_text.lstrip(' ')
-#         sent += line_text
-#     print(sent)
-#         # sentence += line_text
-#         # sentence += "\n"
-
-
-# from pdfreader import PDFDocument
-# fd = open("../data/pdf/4.pdf", 'rb')
-# doc = PDFDocument(fd)
-# page = next(doc.pages())
-# sorted(page.Resources.Font.keys())
-# font = page.Resources.Font[page.Resources.Font.keys()[0]]
-# print(font.Subtype,"|", font.BaseFont,"|", font.Encoding)
-
+fr_rus_eng = FontRecognizer.load_default_model(DefaultModel.Russian_and_English)
+# p = "../data/checkpdf/3.pdf"
+p = "../data/checkpdf/sample3.pdf"
+print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
+# fr_rus_eng.restore_text(p, start_page=0, end_page=1)
+# print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
+# p = "../data/checkpdf/4.pdf"
+# print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
+# p = "../data/checkpdf/2.pdf"
+# print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
 
 # def _decryptChar(cipher, R):
 #     cipher = byteord(cipher)

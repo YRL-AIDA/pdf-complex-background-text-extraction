@@ -46,3 +46,7 @@ def correct_text(text: List[str]):
             res = analise_string(page)
             corrected_text.append(res)
     return corrected_text
+
+
+def correct_text_str(text):
+    return analise_string(text)
