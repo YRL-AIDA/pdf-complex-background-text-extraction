@@ -7,18 +7,14 @@ import subprocess
 import warnings
 from pathlib import Path
 import Augmentor
-import PIL.ImageOps
-from PIL import ImageFont, Image
-from fontTools.pens.boundsPen import BoundsPen
+from PIL import ImageFont
 from fontTools.ttLib import TTFont
 import cv2
 from skimage.util import random_noise
-from font_action.draw_glyph import drawglyph_pillow, drawglyph_by_pen
+from font_action.draw_glyph import drawglyph_by_pen
 import splitfolders
-from os import listdir
-from os.path import isfile, join
 import config
-from src import utils
+from image_action.handle_image import correctly_resize
 
 # images_folder = ""
 
@@ -129,7 +125,7 @@ def generate_imgs_fontforge(save_imgs_folder, font_folder, char_pool):
             DEVNULL = open(os.devnull, 'wb')
             # result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {counter} True", stderr=DEVNULL)
             # result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {counter} True {' '.join(uni_char_pool)}", stderr=DEVNULL)
-            result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py True {save_imgs_folder} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
+            result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py True {save_imgs_folder} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
             #result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, font_file_path, counter, "True"] + uni_char_pool)
             # result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, font_file_path, str(counter), "True"] + uni_char_pool)
             # result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, r'"D:/rep/fonts-recognition/printCharImgs/data/fonts/check/Bebas Neue Cyrillic.otf"', str(counter), "True", "q"])
@@ -138,26 +134,8 @@ def generate_imgs_fontforge(save_imgs_folder, font_folder, char_pool):
         result = result.decode('utf-8')
         result = ast.literal_eval(result)
         for img in result:
-            handle_image(img)
+            correctly_resize(img)
         counter += 1
-
-
-def handle_image(image_path, size: tuple = (28, 28)):
-    im = Image.open(image_path)
-    # im = PIL.ImageOps.invert(im)
-    # im.thumbnail((28, 28), Image.LANCZOS)
-    # im.show()
-    new_image = Image.new("L", size, color=255)
-    x_offset = (new_image.size[0] - im.size[0]) // 2
-    y_offset = (new_image.size[1] - im.size[1]) // 2
-    new_image.paste(im, (x_offset, y_offset))
-    new_image = PIL.ImageOps.invert(new_image)
-    # new_image.show()
-    new_image.save(image_path)
-    # im.save(image_path)
-
-    # im = im.resize(size, Image.LANCZOS)
-    # im.save(image_path)
 
 
 def generate_imgs(save_imgs_folder, font_folder, char_pool):

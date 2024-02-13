@@ -51,8 +51,18 @@ def generate_all_images(save_path, font_path):
     font = fontforge.open(font_path)
     save_paths = []
     for name in font:
+        filename = name + ".png"
+        # print name
+        # char_save_path = f"{save_path}/{filename}"
+        # font[name].export(char_save_path, 29)
         try:
-            filename = str(ord(name)) + ".png"
+            if fontforge.unicodeFromName(name) == -1:
+                continue
+            # filename = str(ord(name)) + ".png"
+            try:
+                filename = str(ord(name)) + ".png"
+            except:
+                filename = str(fontforge.unicodeFromName(name)) + ".png"
             char_save_path = f"{save_path}/{filename}"
             # font[name].simplify(flags=("removesingletonpoints"))
             # font[name].simplify()
@@ -60,12 +70,14 @@ def generate_all_images(save_path, font_path):
             # font[name].isWorthOutputting()
             w = font[name].width
             # font[name].simplify("removesingletonpoints")
-            if w == 0 or not font[name].isWorthOutputting() or font[name].foreground.isEmpty() == 1:
+            # if w == 0 or not font[name].isWorthOutputting() or font[name].foreground.isEmpty() == 1:
+            if (not font[name].isWorthOutputting() or font[name].foreground.isEmpty() == 1) and name != 'space':
                 continue
             font[name].export(char_save_path, 29)
             save_paths.append(char_save_path)
         except:
             continue
+    erq = "123"
     return save_paths
 
 

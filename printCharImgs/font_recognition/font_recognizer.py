@@ -8,6 +8,7 @@ from fontTools.ttLib import TTFont
 import config
 import text_action.analize
 from cnn_model import *
+from src.utils import junkstring
 from .pdf_reader import PDFReader
 from . import pdf_reader as pr
 from main import ROOT_DIR
@@ -73,7 +74,7 @@ class FontRecognizer:
 
     def restore_text(self, pdf_path, start_page=0, end_page=0):
         self.reader.read(pdf_path)
-        self.text = self.__restore_text(pdf_path, self.__match_glyphs_and_encoding_for_all(), start=start_page,
+        self.text = self.__restore_text(pdf_path, self.__match_glyphs_and_encoding_for_all, start=start_page,
                                         end=end_page)
         # print(self.text)
         if self.default_model is DefaultModel.Russian_and_English:
@@ -123,15 +124,15 @@ class FontRecognizer:
                                     if char in dictionary[spans['font']]:
                                         # print(char, dictionary[spans['font']][char], spans['font'], dictionary)
                                         word += dictionary[spans['font']][char]
-                                    elif char in self.reader.white_spaces[spans['font'].split('.')[0]]:
+                                    elif ord(char) in self.reader.white_spaces[spans['font'].split('.')[0]]:
                                         word += " "
                                     else:
                                         word += char
                                         # word += '□'
                                     # print(char, spans['font'])
                                 except KeyError:
-                                    # word += '*'
-                                    word += char
+                                    word += '*'
+                                    # word += char
                             line_text += word
                         line_text = line_text.lstrip(' ').rstrip(' ')
                         sentence += line_text
@@ -159,8 +160,10 @@ class FontRecognizer:
             text_str += sentence
         return text_str
 
+    @property
     def __match_glyphs_and_encoding_for_all(self):
         img_folders = self.reader.get_glyphs_path()
+        print("glyphpath", self.reader.get_glyphs_path())
         # extracted_fonts_folder = os.path.join(ROOT_DIR, config.folders.get('extracted_data_folder'), "extracted_fonts")
         extracted_fonts_folder = config.folders.get("extracted_fonts_folder")
         # extracted_fonts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), extracted_fonts_folder)
@@ -173,6 +176,8 @@ class FontRecognizer:
             ttf_font = TTFont(font_file)
             fitz_font = fitz.Font(fontfile=font_file)
             font_name_images = fontname.split('.')[0]
+            font_name_images = font_name_images.split(junkstring)[0]
+            print("fontnameimgs", font_name_images)
             # matching_res = self.__match_glyphs_and_encoding(ttf_font, fitz_font, img_folders + font_name_images)
             matching_res = self.__match_glyphs_and_encoding(ttf_font, fitz_font,
                                                             os.path.join(img_folders, font_name_images))
@@ -182,7 +187,7 @@ class FontRecognizer:
                                                                                                        dicts[
                                                                                                            font_name_images.split(
                                                                                                                '+')[1]]
-        # print(dicts)
+        print(dicts)
         return dicts
 
     def __match_glyphs_and_encoding(self, ttf_font, fitz_font, images):

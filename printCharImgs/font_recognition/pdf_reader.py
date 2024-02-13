@@ -1,18 +1,22 @@
 import ast
 import os
+import re
 import shutil
 import subprocess
 
 import fitz
 from PIL import ImageFont
+from PIL import Image
 from fontTools.agl import toUnicode
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
 
 import config
 import main
-from cnn_model.data_prepare import handle_image
+from image_action import handle_image
+from image_action.handle_image import correctly_resize
 from font_action.draw_glyph import drawglyph_by_pen
+from src.utils import junkstring
 
 
 class PDFReader:
@@ -95,19 +99,32 @@ class PDFReader:
         os.makedirs(self.glyphs_path)
         font_files = os.listdir(os.fsencode(self.fonts_path))
         DEVNULL = open(os.devnull, 'wb')
+        white_spaces = {}
         for font_file in font_files:
+            font_white_spaces = []
             fontname = os.fsdecode(font_file)
-            to_save_folder = fontname.split('.')[0]
-            save_path = f"{self.glyphs_path}/{to_save_folder}"
+            print("fontname", fontname)
+            fontname = fontname.split('.')[0]
+            fontname = re.split(junkstring, fontname)[0]
+            print("split", re.split(junkstring, fontname))
+            save_path = f"{self.glyphs_path}/{fontname}"
             if not os.path.isdir(save_path):
                 os.makedirs(save_path)
-            font_path = fr'"{self.fonts_path}/{fontname}"'
-            save_path = fr'"{self.glyphs_path}/{to_save_folder}"'
-            result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py False {save_path} {font_path}")
+            font_path = fr'"{self.fonts_path}/{os.fsdecode(font_file)}"'
+            save_path = fr'"{save_path}"'
+            result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py False {save_path} {font_path}")
             result = result.decode('utf-8')
             result = ast.literal_eval(result)
             for img in result:
-                handle_image(img)
+                if handle_image.is_empty(img) and img.split('.')[-1] == 'png':
+                    uni_whitespace = img.split('/')[-1].split('.')[0]
+                    font_white_spaces.append(chr(int(uni_whitespace)))
+                    os.remove(img)
+                    continue
+                correctly_resize(img)
+            white_spaces[fontname] = font_white_spaces
+        self.white_spaces = white_spaces
+        print("whitespaces", self.white_spaces)
 
     def __extract_fonts(self):
         if os.path.isdir(self.fonts_path):
@@ -122,10 +139,11 @@ class PDFReader:
             shutil.rmtree(dir)
         os.mkdir(dir)
         ###
-
+        junk = 0
         for page_num in range(doc.page_count):
             page = doc.get_page_fonts(page_num)
             for fontinfo in page:
+                junk += 1
                 xref = fontinfo[0]
                 if xref in xref_visited:
                     continue
@@ -140,7 +158,8 @@ class PDFReader:
                 #     ofile.write(font['content'])
                 #     ofile.close()
                 if font['ext'] != 'n/a':
-                    ofile = open(dir + font['name'] + "." + font['ext'], "wb")
+                    # ofile = open(dir + font['name'] + "." + font['ext'], "wb")
+                    ofile = open(dir + font['name'] + junkstring + str(junk) + "." + font['ext'], "wb")
                     # ofile = open(dir + font['name'] + "." + 'otf', "wb")
                     ofile.write(font['content'])
                     ofile.close()
