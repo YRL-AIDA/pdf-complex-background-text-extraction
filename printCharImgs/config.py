@@ -50,7 +50,7 @@ other = dict(
 convert = dict(
     convert_chars_to_rus={"a": "а", "b": "в", 'c': 'с', 'd': 'д', 'e': 'е', "h": "н", 'k': 'к', 'm': 'м', 'o': 'о',
                           'p': 'р', 'r': 'г', 'y': 'у', "t": "т", "u": "и", 'x': 'х', },
-    convert_chars_to_eng={"а": "a"}
+    # convert_chars_to_eng={"а": "a", "в": "b", "с": "c", "д"}
 )
 
 folders = dict(
@@ -59,6 +59,7 @@ folders = dict(
     # images_folder="data/datasets/images",
     images_folder=os.path.join(ROOT_DIR, "data/datasets/test2"),
     output_train=os.path.join(ROOT_DIR, "data/datasets/images/output"),
+    last_prepared_data=os.path.join(ROOT_DIR, "data/datasets/last_prepared"),
     extracted_data_folder=os.path.join(ROOT_DIR, "data/pdfdata"),
     extracted_fonts_folder=os.path.join(ROOT_DIR, "data/pdfdata/extracted_fonts"),
     extracted_glyphs_folder=os.path.join(ROOT_DIR, "data/pdfdata/glyph_images"),
@@ -70,7 +71,7 @@ folders = dict(
 
 default_models = [i.split('\\')[-1].split('.')[0] for i in
                   glob.glob(os.path.join(folders.get('default_models_folder'), "*.h5"))]
-default_models_and_labels = {i: {"model_name": i + ".h5", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
+default_models_and_labels = {i: {"model_name": i + ".keras", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
                              i in default_models}
 
 
@@ -93,9 +94,12 @@ class Language(enum.Enum):
 
 
 class DefaultModel(enum.Enum):
-    Russian_and_English = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_eng.h5')),
-                           'labels': Language.Russian_and_English_no_reg_diff.value}
-    Russian = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus.h5')),
-               'labels': Language.Russian_no_reg_diff.value}
-    English = {'model': load_model(os.path.join(folders['default_models_folder'], 'eng.h5')),
-               'labels': Language.English_no_reg_diff.value}
+    Russian_and_English = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_eng.keras')),
+                           'labels': Language.Russian_and_English.value}
+    # Russian = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_no_reg_diff.keras')),
+    #            'labels': Language.Russian_no_reg_diff.value}
+    # English = {'model': load_model(os.path.join(folders['default_models_folder'], 'eng_no_reg_diff.keras')),
+    #            'labels': Language.English_no_reg_diff.value}
+
+
+russian_words = set()

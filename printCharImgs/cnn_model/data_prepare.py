@@ -123,12 +123,7 @@ def generate_imgs_fontforge(save_imgs_folder, font_folder, char_pool):
         try:
             print(font_name)
             DEVNULL = open(os.devnull, 'wb')
-            # result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {counter} True", stderr=DEVNULL)
-            # result = subprocess.check_output(f"ffpython ../cnn_model/fontforge_wrapper.py {save_imgs_folder} {font_file_path} {counter} True {' '.join(uni_char_pool)}", stderr=DEVNULL)
             result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py True {save_imgs_folder} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
-            #result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, font_file_path, counter, "True"] + uni_char_pool)
-            # result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, font_file_path, str(counter), "True"] + uni_char_pool)
-            # result = subprocess.check_output(["ffpython", "../cnn_model/fontforge_wrapper.py", save_imgs_folder, r'"D:/rep/fonts-recognition/printCharImgs/data/fonts/check/Bebas Neue Cyrillic.otf"', str(counter), "True", "q"])
         except:
             continue
         result = result.decode('utf-8')
@@ -224,6 +219,12 @@ def prepdata_fontforge(fonts_path, data_save_path, char_pool):
     if os.path.exists(images_folder + "/output"):
         shutil.rmtree(images_folder + "/output")
     splitfolders.ratio(generate_images_path, output=output_path, ratio=(0.7, 0.2, 0.1), move=False)
+    last_prepared = config.folders.get("last_prepared_data")
+    if os.path.exists(last_prepared):
+        shutil.rmtree(last_prepared)
+    # os.mkdir(last_prepared)
+    print("last prepared copying")
+    shutil.copytree(output_path, last_prepared)
 
 
 def test_from_train(train_path):

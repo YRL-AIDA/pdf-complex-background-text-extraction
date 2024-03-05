@@ -6,6 +6,7 @@ from PIL import Image
 
 def correctly_resize(image_path, size: tuple = (28, 28)):
     im = Image.open(image_path)
+    im.thumbnail((28, 28), Image.LANCZOS)
     new_image = Image.new("L", size, color=255)
     x_offset = (new_image.size[0] - im.size[0]) // 2
     y_offset = (new_image.size[1] - im.size[1]) // 2

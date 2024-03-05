@@ -24,7 +24,7 @@ class Trainer:
         p = Path(self.path)
         self.num_classes = len(next(os.walk(next(p.glob('*'))))[1])
         self.batch_size = batch_size
-        train_ds, validation_ds, test_ds, test_from_train_ds = self.__create_datasets()
+        train_ds, validation_ds, test_ds = self.__create_datasets()
         if self.seq_model is None:
             self.set_model()
         self.seq_model.summary()
@@ -66,15 +66,7 @@ class Trainer:
             color_mode="grayscale",
             image_size=image_size,
             batch_size=b_size)
-        test_from_train_ds = tf.keras.utils.image_dataset_from_directory(
-            self.path + "/test_from_train",
-            labels='inferred',
-            label_mode='categorical',
-            seed=33,
-            color_mode="grayscale",
-            image_size=image_size,
-            batch_size=b_size)
-        return train_ds, validation_ds, test_ds, test_from_train_ds
+        return train_ds, validation_ds, test_ds
 
     def set_model(self, model: tf.keras.Model = None):
         input_shape = (self.w, self.h, 1)

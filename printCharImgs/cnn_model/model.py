@@ -16,7 +16,9 @@ from . import data_prepare
 from main import ROOT_DIR
 import json
 from typing import Union
+import pytesseract
 
+pytesseract.pytesseract.tesseract_cmd = 'D:\\soft\\Tesseract\\tesseract.exe'
 
 class Model:
     # def __init__(self, **kwargs):
@@ -104,7 +106,8 @@ class Model:
         if type(char_pool) is config.Language:
             char_pool = char_pool.value
         assert os.path.exists(fonts_path), "no folder with fonts"
-        self.data_path = data_save_path + "/output"
+        # self.data_path = data_save_path + "/output"
+        self.data_path = f"{data_save_path}/output"
         data_prepare.prepdata_fontforge(fonts_path, data_save_path, char_pool)
         # data_prepare.prepdata(fonts_path, data_save_path, char_pool)
 
@@ -118,9 +121,11 @@ class Model:
                 data_path = self.data_path
             else:
                 # data_path = os.path.join(main.ROOT_DIR, config.folders.get("images_folder"), "output")
-                data_path = config.folders.get('output_train')
+                # data_path = config.folders.get('output_train')
+                data_path = config.folders.get('last_prepared_data')
         assert data_path is not None, "No data for train"
-        assert len(next(os.walk(data_path))[1]) == 4, "should be 4 folders: train, val, test, test_from_train"
+
+        assert len(next(os.walk(data_path))[1]) == 3, "should be 3 folders: train, val, test"
 
         if os.path.exists(logs_path):
             shutil.rmtree(logs_path)
@@ -142,6 +147,14 @@ class Model:
         problabels = probs.argmax(axis=-1)
         prediction = self.labels[problabels[0]]
         return prediction
+        # img = cv2.imread(png)
+        # try:
+        #     data = pytesseract.image_to_string(img, lang='rus+eng', config='--psm 10')
+        #     if 'ABCDEE+' in png:
+        #         q = 1
+        #     return ord(data.replace('\n', ''))
+        # except:
+        #     return ord('-')
 
     def bb(self):
         # png = "D:\\rep\\fonts-recognition\\printCharImgs\\images\\output\\test\\8\\8_259.png"

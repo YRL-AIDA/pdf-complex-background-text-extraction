@@ -4,33 +4,29 @@ from config import DefaultModel
 #
 fr_rus_eng = FontRecognizer.load_default_model(DefaultModel.Russian_and_English)
 # p = "../data/checkpdf/3.pdf"
-p = "../data/checkpdf/sample3.pdf"
-print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
-# fr_rus_eng.restore_text(p, start_page=0, end_page=1)
-# print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
-# p = "../data/checkpdf/4.pdf"
-# print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
+# p = "../data/checkpdf/sample3.pdf"
 # p = "../data/checkpdf/2.pdf"
-# print(fr_rus_eng.restore_text(p, start_page=0, end_page=1))
+q = "../data/checkpdf2"
+qq = "../data/checkpdf"
+norm = [f'{q}/152.pdf', f'{q}/069.pdf', f'{q}/089.pdf', f'{q}/154.pdf', f'{qq}/mongolo.pdf']
+p = "../data/checkpdf2/q.pdf"
+print(fr_rus_eng.restore_text_fontforge(norm[-1], start_page=0, end_page=1))
 
-# def _decryptChar(cipher, R):
-#     cipher = byteord(cipher)
-#     plain = ((cipher ^ (R >> 8))) & 0xFF
-#     R = ((cipher + R) * 52845 + 22719) & 0xFFFF
-#     return bytechr(plain), R
-#
-#
-# def _encryptChar(plain, R):
-#     plain = byteord(plain)
-#     cipher = ((plain ^ (R >> 8))) & 0xFF
-#     R = ((cipher + R) * 52845 + 22719) & 0xFFFF
-#     return bytechr(cipher), R
-#
-#
-# def decrypt(cipherstring, R):
-#     plainList = []
-#     for cipher in cipherstring:
-#         plain, R = _decryptChar(cipher, R)
-#         plainList.append(plain)
-#     plainstring = bytesjoin(plainList)
-#     return plainstring, int(R)
+
+# import text_action.analize
+# print('Hиman'.lower())
+# print(text_action.analize.find_closest_word('austrazian'))
+import re
+
+# cc = re.findall(r'(?:\w\S*\w)|(?:\S)|(?: )', 'big f,c|ing| cock')
+# cc = re.findall(r'\b\w+\b|[,. ]', 'big, f,c|ing| cock')
+# cc = re.findall(r'\b\w+\b|[\w,]+|[.,\s]', 'big, f,c|ing| house')
+# cc = re.findall(r'(?:\S+(?=[,\.]\s)|(?:\S+(?=\s|$))|(?:\s))', 'q.er., asdf zxcv. asdas')
+# print(cc)
+# print(''.join(cc))
+
+# print(re.findall(r'(?:\w\S*\w)|(?:\S)|(?: )', 'big f,c|ing, cock'))
+# (cid:01) ' '
+# \GDE \GDA \GDB
+# \x01 \x02 \x03
+# \Differer

@@ -31,6 +31,7 @@ class PDFReader:
         self.__extract_fonts()
         # self.__draw_glyphs()
         self.__draw_glyphs_fontforge()
+        # self.__draw_glyphs()
 
     def __draw_glyphs(self):
         if os.path.isdir(self.glyphs_path):
@@ -90,6 +91,7 @@ class PDFReader:
                 counter += 1
             whitespaces[fontname.split('.')[0]] = font_whitespaces
 
+
         # print("reader whitespaces", whitespaces)
         self.white_spaces = whitespaces
 
@@ -101,7 +103,7 @@ class PDFReader:
         DEVNULL = open(os.devnull, 'wb')
         white_spaces = {}
         for font_file in font_files:
-            font_white_spaces = []
+            font_white_spaces = {}
             fontname = os.fsdecode(font_file)
             print("fontname", fontname)
             fontname = fontname.split('.')[0]
@@ -114,11 +116,16 @@ class PDFReader:
             save_path = fr'"{save_path}"'
             result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py False {save_path} {font_path}")
             result = result.decode('utf-8')
-            result = ast.literal_eval(result)
+            result = set(ast.literal_eval(result))
             for img in result:
                 if handle_image.is_empty(img) and img.split('.')[-1] == 'png':
                     uni_whitespace = img.split('/')[-1].split('.')[0]
-                    font_white_spaces.append(chr(int(uni_whitespace)))
+                    name = ''
+                    try:
+                        name = chr(int(uni_whitespace))
+                    except:
+                        name = uni_whitespace
+                    font_white_spaces[name] = ' '
                     os.remove(img)
                     continue
                 correctly_resize(img)

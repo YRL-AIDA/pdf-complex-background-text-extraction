@@ -1,26 +1,12 @@
 import sys
+import fontforge
 
+image_size = 80
 
-# def generate_images(save_path, font_path, uni, index, is_train):
-#     import fontforge
-#     font = fontforge.open(font_path)
-#     glyph_name = fontforge.nameFromUnicode(int(uni))
-#     char = chr(int(uni))
-#     if is_train == "True" and char.isalpha():
-#         if char.isupper():
-#             char_low = char.lower()
-#             if font[ord(char)] == font[ord(char_low)]:
-#                 return "None"
-#         ##
-#     if glyph_name == -1:
-#         return "None"
-#     save_path = f"{save_path}/{uni}/{uni}_{index}.png"
-#     font[int(uni)].export(save_path, 29)
-#     return save_path
 
 def generate_images(save_path, font_path, index, uni_char_pool):
-    import fontforge
-    font = fontforge.open(font_path)
+
+    font = fontforge.open(font_path, 1)
     save_paths = []
     for uni in uni_char_pool:
         uni = int(uni)
@@ -39,47 +25,50 @@ def generate_images(save_path, font_path, index, uni_char_pool):
         char_save_path = f"{save_path}/{uni}/{font.fontname}_{index}.png"
 
         try:
-            font[int(uni)].export(char_save_path, 29)
+            font[int(uni)].export(char_save_path, image_size)
             save_paths.append(char_save_path)
         except:
             continue
 
     return save_paths
 
+
+
 def generate_all_images(save_path, font_path):
-    import fontforge
     font = fontforge.open(font_path)
     save_paths = []
+    names = []
     for name in font:
-        filename = name + ".png"
-        # print name
-        # char_save_path = f"{save_path}/{filename}"
-        # font[name].export(char_save_path, 29)
+        names.append(name)
         try:
-            if fontforge.unicodeFromName(name) == -1:
+            if not font[name].isWorthOutputting() and name != 'space':
                 continue
-            # filename = str(ord(name)) + ".png"
+            if name.startswith('glyph'):
+                name = chr(name.removeprefix('glyph'))
             try:
                 filename = str(ord(name)) + ".png"
             except:
-                filename = str(fontforge.unicodeFromName(name)) + ".png"
+                # try:
+                #     filename = str(fontforge.unicodeFromName(name)) + ".png"
+                # except:
+                #     filename = name + ".png"
+                unicode_by_name = str(fontforge.unicodeFromName(name))
+                if unicode_by_name == '-1' and name == '.notdef':
+                    continue
+
+                if unicode_by_name == '-1':
+                    filename = name + ".png"
+                else:
+                    filename = unicode_by_name + '.png'
             char_save_path = f"{save_path}/{filename}"
-            # font[name].simplify(flags=("removesingletonpoints"))
-            # font[name].simplify()
-            # font[name].foreground.isEmpty()
-            # font[name].isWorthOutputting()
-            w = font[name].width
-            # font[name].simplify("removesingletonpoints")
-            # if w == 0 or not font[name].isWorthOutputting() or font[name].foreground.isEmpty() == 1:
-            if (not font[name].isWorthOutputting() or font[name].foreground.isEmpty() == 1) and name != 'space':
+            if name == ".notdef" or filename == '-1.png':
                 continue
-            font[name].export(char_save_path, 29)
+            # font[name].export(char_save_path, 29)
+            font[name].export(char_save_path, image_size)
             save_paths.append(char_save_path)
         except:
             continue
-    erq = "123"
     return save_paths
-
 
 
 if __name__ == "__main__":
