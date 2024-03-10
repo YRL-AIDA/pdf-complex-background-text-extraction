@@ -20,7 +20,7 @@ rus = ['а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з', 'и', 'й', 'к', 'л', '
        'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я', 'o', 'a', 'c', 'e', 'x', 'k']
 eng = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
        'w', 'x', 'y', 'z', 'о', "а", "с"]
-onlyRus = ['я', 'й', 'ц', 'б', 'ж', 'з', 'д', 'л', 'ф', 'ш', 'щ', "ч", "ъ", "ь", "э", "ю", 'т', 'г']
+onlyRus = ['я', 'й', 'ц', 'б', 'ж', 'з', 'д', 'л', 'ф', 'ш', 'щ', "ч", "ъ", "ь", "э", "ю", 'г']
 onlyEng = ['q', 'w', 'f', 'i', 'j', 'l', 'z', 's', 'v', 'g']
 warnings.warn('G/g это onlyEng????????????????? т/Т ???')
 
@@ -52,24 +52,27 @@ def analise_string(string: str):
     for word in strings:
         analized = analise_word(word)
         if analized is not None:
-            ans.append(analise_word(word))
+            ans.append(analized)
     return " ".join(ans)
 
 
 def analise_word(string: str):
     l = list(string)
+    print(string)
+    if 'ReСоBS' == string:
+        q = 1
     letters = {x: string.count(x) for x in string}
     latin = sum([val for val, key in zip(letters.values(), letters.keys()) if key in eng])
     cyrrilic = sum([val for val, key in zip(letters.values(), letters.keys()) if key in rus])
 
     converted = string
-    if (cyrrilic >= latin and latin + cyrrilic > 0) or any(char in string.lower() for char in onlyRus):
-        # converted = "".join([(convertdictrus[item] if item.islower() else convertdictrus[item.lower()].upper())
-        #                      if item.lower() in convertdictrus else item for item in l])
+    if any(char in string.lower() for char in onlyRus):
         converted = substitute_chars_by_dict(convertdictrus, l)
-    elif latin > cyrrilic or any(char in string.lower() for char in onlyEng):
-        # converted = "".join([(convertdicteng[item] if item.islower() else convertdicteng[item.lower()].upper())
-        #                      if item.lower() in convertdicteng else item for item in l])
+    elif any(char in string.lower() for char in onlyEng):
+        converted = substitute_chars_by_dict(convertdicteng, l)
+    elif cyrrilic >= latin and latin + cyrrilic > 0:
+        converted = substitute_chars_by_dict(convertdictrus, l)
+    elif latin > cyrrilic:
         converted = substitute_chars_by_dict(convertdicteng, l)
     return converted
 
@@ -172,3 +175,17 @@ def correct_text2(text):
 
 def correct_text_str(text):
     return analise_string(text)
+
+
+def collapse_text(text):
+    text = ' '.join(text.splitlines())
+    text = ' '.join(text.split())
+    return text
+
+
+def remove_redundant_whitespaces(text):
+    return ' '.join(text.split())
+
+
+def remove_hyphenations(text):
+    return text.replace('- ', '')

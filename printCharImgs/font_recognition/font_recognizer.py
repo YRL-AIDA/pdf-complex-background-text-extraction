@@ -1,6 +1,7 @@
 import glob
 import os
 import re
+import warnings
 from typing import Any, Iterable
 
 import PyPDF2
@@ -16,6 +17,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import resolve1
+from pdfminer.psparser import PSLiteral
 from pdfminer.high_level import extract_text, extract_pages
 from io import StringIO
 
@@ -62,6 +64,7 @@ class FontRecognizer:
         self.match_dict = {}
         self.cached_fonts = None
         self.fontname2basefont = {}
+        self.unicodemaps = {}
 
     @classmethod
     def load_default_model(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
@@ -90,6 +93,7 @@ class FontRecognizer:
     #         self.reader = PDFReader(data_save_path=data_save_path)
 
     def restore_text(self, pdf_path, start_page=0, end_page=0):
+        Exception("no use")
         self.text = None
         self.match_dict = {}
         self.reader.read(pdf_path)
@@ -101,10 +105,6 @@ class FontRecognizer:
         if self.default_model is DefaultModel.Russian_and_English:
             # self.text = text_action.analize.correct_text(self.text)
             self.text = text_action.analize.correct_text_str(self.text)
-        # print(self.text)
-        # with open(pdf_path, 'rb') as file:
-        #     for i in extract_pages(file):
-        #         w = 1
         return self.text
 
     def restore_text_fontforge(self, pdf_path, start_page=0, end_page=0):
@@ -112,7 +112,9 @@ class FontRecognizer:
         self.text = ''
         self.match_dict = {}
         self.reader.read(pdf_path)
-        self.match_dict = self.reader.white_spaces
+        # self.match_dict = self.reader.white_spaces
+        warnings.warn('self.match_dict = self.reader.white_spaces ????')
+        warnings.warn('right now ignoring #.superior')
         self.__match_glyphs_and_encoding_for_all_fontforge
         fonts_match_dict = self.match_dict
         self.text = self.__restore_text2(pdf_path, fonts_match_dict, start=start_page, end=end_page)
@@ -203,6 +205,7 @@ class FontRecognizer:
         # Open the PDF file
         self.cached_fonts = None
         self.fontname2basefont = {}
+        self.unicodemaps = {}
         with open(pdf_path, 'rb') as fp:
             parser = PDFParser(fp)
             document = PDFDocument(parser)
@@ -228,7 +231,7 @@ class FontRecognizer:
                 interpreter.process_page(page)
                 layout = device.get_result()
                 cached_fonts = {}
-                fonts = page.resources['Font']
+                fonts = page.resources.get('Font')
                 if not isinstance(fonts, dict):
                     Exception('fonts should be dictionary, ti nepravilno napisal kod(')
                 for font_key, font_obj in fonts.items():
@@ -236,17 +239,23 @@ class FontRecognizer:
                     encoding = resolve1(font_dict['Encoding'])
                     f = rsrcmgr.get_font(objid=font_obj.objid, spec={'name': resolve1(font_obj)['BaseFont'].name})
                     self.fontname2basefont[f.fontname] = f.basefont if hasattr(f, 'basefont') else f.fontname
+
+                    if hasattr(f, 'unicode_map') and hasattr(f.unicode_map, 'cid2unichr'):
+                        basefont_else_fontname = self.fontname2basefont[f.fontname]
+                        self.unicodemaps[basefont_else_fontname] = f.unicode_map.cid2unichr
                     if not (isinstance(encoding, dict) and ('/Differences' in encoding or 'Differences' in encoding)):
                         cached_fonts[f.fontname] = []
                         continue
-
-                    char_set_arr = f.descriptor['CharSet'].decode('utf-8').split('/')
-
+                    # char_set_arr1 = f.descriptor['CharSet'].decode('utf-8').split('/')
+                    char_set_arr = [q.name if isinstance(q, PSLiteral) else '' for q in encoding['Differences']]
+                    # char_set_arr = [encoding['Differences']]
+                    # ВЕСIНИк В0ССIАН0ВИIЕЛЬН0Й МСIИЦИИ 0вществеwwому цеwтру <Сулевwо-прqвовqя pegopmq+ 10 лет *ЖGМНДСР УNSквFЧС &FFP
                     cached_fonts[f.fontname] = char_set_arr
                 self.cached_fonts = rsrcmgr._cached_fonts
                 self.walk(layout, cached_fonts, fulltext)
 
-        self.text = self.text.replace('- ', '')
+
+        self.text = analize.remove_hyphenations(self.text)
         return self.text
 
     @property
@@ -381,47 +390,49 @@ class FontRecognizer:
         return dictionary
 
     def walk(self, o: Any, cached_fonts: dict, fulltext: str):
-
+        if isinstance(o, (LTTextBox, LTTextBoxVertical, LTTextBoxHorizontal)):
+            q = 1
         if isinstance(o, LTChar):
             char = o.get_text()
             match_dict_key = self.fontname2basefont[o.fontname]
             if not cached_fonts[o.fontname]:
                 try:
-                    # fulltext += self.match_dict[o.fontname][char]
                     fulltext += self.match_dict[match_dict_key][char]
-                # self.text += self.match_dict[o.fontname][char]
                     o._text = self.match_dict[match_dict_key][char]
-                except:
                     # o._text = '□'
-                    o._text = char
+                except:
+                    # o._text = char
+                    o._text = '□'
+                    return
                 return
             index = -1
             if 'cid' in char:
                 index = int(char[1:-1].split(':')[-1])
+            elif 'glyph' in char:
+                glyph_unicode = int(char[5:])
+                index = ord(self.unicodemaps[glyph_unicode])
             else:
-                index = ord(char)
-                if ord(char) > len(cached_fonts[o.fontname]) and char == '’':
-                    char = "'"
+                try:
                     index = ord(char)
-                elif ord(char) > len(cached_fonts[o.fontname]):
-                    index = len(cached_fonts[o.fontname])-1
+                    if ord(char) > len(cached_fonts[o.fontname]) and char == '’':
+                        char = "'"
+                        index = ord(char)
+                    elif ord(char) > len(cached_fonts[o.fontname]):
+                        # index = len(cached_fonts[o.fontname])-1
+                        o._text = self.match_dict[match_dict_key][char]
+                        # o._text = char
+                        return
+                except:
+                    o._text = '□'
+                    # o._text += char
+                    return
             try:
                 glyph_name = cached_fonts[o.fontname][index]
-                # fulltext += self.match_dict[o.fontname][glyph_name]
                 fulltext += self.match_dict[match_dict_key][glyph_name]
-                # self.text += self.match_dict[o.fontname][glyph_name]
-                # o._text = self.match_dict[o.fontname][glyph_name]
                 o._text = self.match_dict[match_dict_key][glyph_name]
             except:
                 fulltext += char
-                # self.text += char
-                # o._text = char
                 o._text = '□'
-            # finally:
-            # try:
-            #     print(cached_fonts[o.fontname][index])
-            # except:
-            #     print(char)
         elif isinstance(o, Iterable):
             for i in o:
                 self.walk(i, cached_fonts, fulltext)

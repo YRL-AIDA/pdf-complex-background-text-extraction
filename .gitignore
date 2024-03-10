@@ -15,3 +15,6 @@ printCharImgs/data/logs
 printCharImgs/data/models_and_classnames
 printCharImgs/data/pdf
 printCharImgs/data/pdfdata
+*.txt
+*.json
+*.keras

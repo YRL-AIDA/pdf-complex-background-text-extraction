@@ -82,11 +82,11 @@ from compare_approaches import compare
 
 q = "../data/checkpdf2"
 qq = "../data/checkpdf"
-norm = [f'{q}/152.pdf', f'{q}/069.pdf', f'{q}/089.pdf', f'{q}/154.pdf', f'{qq}/mongolo.pdf']
+norm = ['154', '278.json', '767']
 p = "../data/checkpdf2/q.pdf"
 tabby_text = 'Australasian Information Evaluation Program | | Report Junos OS 20. 2R1 for SRX345, И SRX345- DUAL- AC, SRX380 and: SR X1500 О Nersion 1:6, 03 December Ам. > = РЕ чиччиче -- > до мч. - > ААчАШФеллд = ‹ ‹ о - - - - ФА..--.--- eee и чо ч esr BOP > р < Ш} > > ACP > ee | | < < YO © Ир or acer hr rh mh wr Br aA > mr ДА > OdOP чь © АЩЬ ee ee >> > ор rca COAAAP sr Adi но + > чочь <> erra maa aap eon «Ш Ar > Ар < > <r с Бег. ома dP у 9 и ДА > = <> ss дор <> и ор 4 4» › «cc. ччор <'
 recognizer = FontRecognizer.load_default_model()
-cnn_text = recognizer.restore_text_fontforge(norm[3], start_page=0, end_page=1)
+cnn_text = recognizer.restore_text_fontforge(f'{q}/{norm[-1]}.pdf', start_page=0, end_page=1)
 orig = 'Australasian Information Security Evaluation Program  Certification Report Juniper Junos OS 20.2R1 for SRX345, SRX345-DUAL-AC, SRX380 and SRX1500 Version 1.0, 03 December 2020'
 compare.compare_two_strings_with_orig(cnn_text, tabby_text, orig)
 

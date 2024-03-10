@@ -1,4 +1,6 @@
 import sys
+import warnings
+
 import fontforge
 
 image_size = 80
@@ -37,16 +39,21 @@ def generate_images(save_path, font_path, index, uni_char_pool):
 def generate_all_images(save_path, font_path):
     font = fontforge.open(font_path)
     save_paths = []
-    names = []
+    # names = []
     for name in font:
-        names.append(name)
+        # names.append(name)
         try:
+            if 'superior' in name:
+                continue
+            if 'eight' == name:
+                q = 1
             if not font[name].isWorthOutputting() and name != 'space':
                 continue
-            if name.startswith('glyph'):
-                name = chr(name.removeprefix('glyph'))
+            # if name.startswith('glyph'):
+            #     # name = chr(int(name.removeprefix('glyph')))
             try:
                 filename = str(ord(name)) + ".png"
+                # filename = save_name + ".png"
             except:
                 # try:
                 #     filename = str(fontforge.unicodeFromName(name)) + ".png"

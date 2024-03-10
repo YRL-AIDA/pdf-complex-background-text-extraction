@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import subprocess
+import warnings
 
 import fitz
 from PIL import ImageFont
@@ -114,6 +115,7 @@ class PDFReader:
                 os.makedirs(save_path)
             font_path = fr'"{self.fonts_path}/{os.fsdecode(font_file)}"'
             save_path = fr'"{save_path}"'
+            warnings.warn('glyph#### how to parse')
             result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py False {save_path} {font_path}")
             result = result.decode('utf-8')
             result = set(ast.literal_eval(result))
@@ -125,6 +127,8 @@ class PDFReader:
                         name = chr(int(uni_whitespace))
                     except:
                         name = uni_whitespace
+                    if name == '■': #278.json
+                        q = 1
                     font_white_spaces[name] = ' '
                     os.remove(img)
                     continue
