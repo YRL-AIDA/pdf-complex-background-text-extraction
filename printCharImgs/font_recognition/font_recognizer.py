@@ -2,7 +2,7 @@ import glob
 import os
 import re
 import warnings
-from typing import Any, Iterable
+from typing import Any, Iterable, BinaryIO
 
 import PyPDF2
 import cv2
@@ -31,6 +31,8 @@ from .pdf_reader import PDFReader
 
 # BAZA
 fitz.TOOLS.set_subset_fontnames(True)
+
+
 # BAZA
 
 
@@ -62,9 +64,9 @@ class FontRecognizer:
         self.default_model = None
         self.text = None
         self.match_dict = {}
-        self.cached_fonts = None
+        self.differences_of_fonts = None
         self.fontname2basefont = {}
-        self.unicodemaps = {}
+        self.reverse_unicodemaps = {}
 
     @classmethod
     def load_default_model(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
@@ -113,7 +115,7 @@ class FontRecognizer:
         self.match_dict = {}
         self.reader.read(pdf_path)
         # self.match_dict = self.reader.white_spaces
-        warnings.warn('self.match_dict = self.reader.white_spaces ????')
+        warnings.warn('ya removed whitespaces')
         warnings.warn('right now ignoring #.superior')
         self.__match_glyphs_and_encoding_for_all_fontforge
         fonts_match_dict = self.match_dict
@@ -185,7 +187,7 @@ class FontRecognizer:
                         #     sentence += " "
                         #     continue
 
-                        #ne nado
+                        # ne nado
                         # sentence += '\n'
 
                         # if sentence[-1] in string.punctuation:
@@ -203,9 +205,9 @@ class FontRecognizer:
     def __restore_text2(self, pdf_path, dictionary, start=0, end=0):
         fulltext = ''
         # Open the PDF file
-        self.cached_fonts = None
+        self.differences_of_fonts = None
         self.fontname2basefont = {}
-        self.unicodemaps = {}
+        self.reverse_unicodemaps = {}
         with open(pdf_path, 'rb') as fp:
             parser = PDFParser(fp)
             document = PDFDocument(parser)
@@ -221,7 +223,6 @@ class FontRecognizer:
             device = PDFPageAggregator(rsrcmgr, laparams=laparams)
             interpreter = PDFPageInterpreter(rsrcmgr, device)
 
-            # Iterate through each page of the PDF
             for page_num, page in enumerate(PDFPage.create_pages(document)):
 
                 if page_num < start:
@@ -230,8 +231,10 @@ class FontRecognizer:
                     break
                 interpreter.process_page(page)
                 layout = device.get_result()
-                cached_fonts = {}
+                differences_of_fonts = {}
                 fonts = page.resources.get('Font')
+                if fonts is None:
+                    continue
                 if not isinstance(fonts, dict):
                     Exception('fonts should be dictionary, ti nepravilno napisal kod(')
                 for font_key, font_obj in fonts.items():
@@ -242,21 +245,45 @@ class FontRecognizer:
 
                     if hasattr(f, 'unicode_map') and hasattr(f.unicode_map, 'cid2unichr'):
                         basefont_else_fontname = self.fontname2basefont[f.fontname]
-                        self.unicodemaps[basefont_else_fontname] = f.unicode_map.cid2unichr
+                        cmap = dict(zip(f.unicode_map.cid2unichr.values(), f.unicode_map.cid2unichr.keys()))
+                        if basefont_else_fontname in self.reverse_unicodemaps:
+                            self.reverse_unicodemaps[basefont_else_fontname] = {
+                                **self.reverse_unicodemaps[basefont_else_fontname],
+                                **cmap}
+                        else:
+                            self.reverse_unicodemaps[basefont_else_fontname] = cmap
                     if not (isinstance(encoding, dict) and ('/Differences' in encoding or 'Differences' in encoding)):
-                        cached_fonts[f.fontname] = []
+                        differences_of_fonts[f.fontname] = []
                         continue
-                    # char_set_arr1 = f.descriptor['CharSet'].decode('utf-8').split('/')
                     char_set_arr = [q.name if isinstance(q, PSLiteral) else '' for q in encoding['Differences']]
-                    # char_set_arr = [encoding['Differences']]
-                    # ВЕСIНИк В0ССIАН0ВИIЕЛЬН0Й МСIИЦИИ 0вществеwwому цеwтру <Сулевwо-прqвовqя pegopmq+ 10 лет *ЖGМНДСР УNSквFЧС &FFP
-                    cached_fonts[f.fontname] = char_set_arr
-                self.cached_fonts = rsrcmgr._cached_fonts
-                self.walk(layout, cached_fonts, fulltext)
-
+                    differences_of_fonts[f.fontname] = char_set_arr
+                self.differences_of_fonts = rsrcmgr._cached_fonts
+                self.walk(layout, differences_of_fonts, fulltext)
 
         self.text = analize.remove_hyphenations(self.text)
         return self.text
+
+    # def __gather_font_data(self, interpreter, device, rsrcmgr, page):
+    #     interpreter.process_page(page)
+    #     layout = device.get_result()
+    #     cached_fonts = {}
+    #     fonts = page.resources.get('Font')
+    #     if not isinstance(fonts, dict):
+    #         Exception('fonts should be dictionary, ti nepravilno napisal kod(')
+    #     for font_key, font_obj in fonts.items():
+    #         font_dict = resolve1(font_obj)
+    #         encoding = resolve1(font_dict['Encoding'])
+    #         f = rsrcmgr.get_font(objid=font_obj.objid, spec={'name': resolve1(font_obj)['BaseFont'].name})
+    #         self.fontname2basefont[f.fontname] = f.basefont if hasattr(f, 'basefont') else f.fontname
+    #
+    #         if hasattr(f, 'unicode_map') and hasattr(f.unicode_map, 'cid2unichr'):
+    #             basefont_else_fontname = self.fontname2basefont[f.fontname]
+    #             self.unicodemaps[basefont_else_fontname] = f.unicode_map.cid2unichr
+    #         if not (isinstance(encoding, dict) and ('/Differences' in encoding or 'Differences' in encoding)):
+    #             cached_fonts[f.fontname] = []
+    #             continue
+    #         char_set_arr = [q.name if isinstance(q, PSLiteral) else '' for q in encoding['Differences']]
+    #         cached_fonts[f.fontname] = char_set_arr
 
     @property
     def __match_glyphs_and_encoding_for_all(self):
@@ -282,11 +309,12 @@ class FontRecognizer:
             # print(font_file, font_name_images)
             font_name_without_prefix = font_name_images.split('+')[1] if '+' in font_name_images else font_name_images
             dicts[font_name_images] = matching_res if font_name_without_prefix not in dicts else matching_res | \
-                                                                                                       dicts[
-                                                                                                           font_name_images.split(
-                                                                                                               '+')[1]]
+                                                                                                 dicts[
+                                                                                                     font_name_images.split(
+                                                                                                         '+')[1]]
         print(dicts)
         return dicts
+
     @property
     def __match_glyphs_and_encoding_for_all_fontforge(self):
         img_folders = self.reader.get_glyphs_path()
@@ -307,9 +335,9 @@ class FontRecognizer:
             # print(font_file, font_name_images)
             font_name_without_prefix = font_name_images.split('+')[1] if '+' in font_name_images else font_name_images
             dicts[font_name_images] = matching_res if font_name_without_prefix not in dicts else matching_res | \
-                                                                                                       dicts[
-                                                                                                           font_name_images.split(
-                                                                                                               '+')[1]]
+                                                                                                 dicts[
+                                                                                                     font_name_images.split(
+                                                                                                         '+')[1]]
         print(dicts)
         # self.match_dict = {**self.match_dict, **dicts}
         # self.match_dict = dicts
@@ -389,53 +417,59 @@ class FontRecognizer:
 
         return dictionary
 
-    def walk(self, o: Any, cached_fonts: dict, fulltext: str):
+    def walk(self, o: Any, differences_of_fonts: dict, fulltext: str):
         if isinstance(o, (LTTextBox, LTTextBoxVertical, LTTextBoxHorizontal)):
             q = 1
         if isinstance(o, LTChar):
             char = o.get_text()
             match_dict_key = self.fontname2basefont[o.fontname]
-            if not cached_fonts[o.fontname]:
+            if not differences_of_fonts[o.fontname]:
                 try:
-                    fulltext += self.match_dict[match_dict_key][char]
-                    o._text = self.match_dict[match_dict_key][char]
-                    # o._text = '□'
+                    if char not in self.match_dict[match_dict_key]:
+                        key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+                        o._text = self.match_dict[match_dict_key][key]
+                        # o._text = '□'
+                    else:
+                        o._text = self.match_dict[match_dict_key][char]
+                        # o._text = '□'
                 except:
-                    # o._text = char
-                    o._text = '□'
+                    o._text = char
+                    # o._text = '□'
                     return
                 return
             index = -1
             if 'cid' in char:
                 index = int(char[1:-1].split(':')[-1])
-            elif 'glyph' in char:
-                glyph_unicode = int(char[5:])
-                index = ord(self.unicodemaps[glyph_unicode])
+            # elif char in self.reverse_unicodemaps[match_dict_key] and (key:=f'glyph{self.reverse_unicodemaps[match_dict_key][char]}' in self.match_dict[match_dict_key]):
+            elif len(char) == 1 and char in (w := self.reverse_unicodemaps[match_dict_key]) and char != chr(w[char]):
+                key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+                index = self.match_dict[match_dict_key][key]
             else:
                 try:
                     index = ord(char)
-                    if ord(char) > len(cached_fonts[o.fontname]) and char == '’':
+                    if ord(char) > len(differences_of_fonts[o.fontname]) and char == '’':
                         char = "'"
                         index = ord(char)
-                    elif ord(char) > len(cached_fonts[o.fontname]):
+                    elif ord(char) > len(differences_of_fonts[o.fontname]):
                         # index = len(cached_fonts[o.fontname])-1
+                        # o._text = '□'
                         o._text = self.match_dict[match_dict_key][char]
-                        # o._text = char
                         return
                 except:
-                    o._text = '□'
-                    # o._text += char
+                    # o._text = '□'
+                    o._text = char
                     return
             try:
-                glyph_name = cached_fonts[o.fontname][index]
+                glyph_name = differences_of_fonts[o.fontname][index]
                 fulltext += self.match_dict[match_dict_key][glyph_name]
                 o._text = self.match_dict[match_dict_key][glyph_name]
+                # o._text = '□'
             except:
-                fulltext += char
-                o._text = '□'
+                # o._text = '□'
+                o._text = char
         elif isinstance(o, Iterable):
             for i in o:
-                self.walk(i, cached_fonts, fulltext)
+                self.walk(i, differences_of_fonts, fulltext)
 
         if isinstance(o, (LTTextBox, LTTextBoxVertical, LTTextBoxHorizontal)):
             text = o.get_text()
@@ -448,4 +482,3 @@ class FontRecognizer:
             # text = analize.find_closest_word(text)
 
             self.text += text
-

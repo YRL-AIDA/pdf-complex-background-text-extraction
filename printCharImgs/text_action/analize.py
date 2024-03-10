@@ -59,8 +59,7 @@ def analise_string(string: str):
 def analise_word(string: str):
     l = list(string)
     print(string)
-    if 'ReСоBS' == string:
-        q = 1
+
     letters = {x: string.count(x) for x in string}
     latin = sum([val for val, key in zip(letters.values(), letters.keys()) if key in eng])
     cyrrilic = sum([val for val, key in zip(letters.values(), letters.keys()) if key in rus])

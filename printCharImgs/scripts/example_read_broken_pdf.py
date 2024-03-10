@@ -14,7 +14,7 @@ qqq = "../data/check_pdf"
 # norm = [f'{q}/152.pdf', f'{q}/069.pdf', f'{q}/089.pdf', f'{q}/154.pdf', f'{qq}/mongolo.pdf']
 norm = ['154', '278.json', '767', 'hz', 'hz2', 'hz3']
 p = "../data/checkpdf2/278.pdf"
-ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/278.pdf', start_page=0, end_page=1))
+ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/13.pdf', start_page=3, end_page=4))
 # print(fr_rus_eng.restore_text_fontforge(f'{q}/q.pdf', start_page=0, end_page=1))
 
 
