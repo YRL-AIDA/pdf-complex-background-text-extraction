@@ -12,12 +12,19 @@ q = "../data/checkpdf2"
 qq = "../data/checkpdf"
 qqq = "../data/check_pdf"
 # norm = [f'{q}/152.pdf', f'{q}/069.pdf', f'{q}/089.pdf', f'{q}/154.pdf', f'{qq}/mongolo.pdf']
-norm = ['154', '278.json', '767', 'hz', 'hz2', 'hz3']
+norm = ['154', '278', '767', 'hz', 'hz2', 'hz3']
 p = "../data/checkpdf2/278.pdf"
-ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/13.pdf', start_page=3, end_page=4))
+ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/w2.pdf', start_page=0, end_page=1))
+# ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/5.pdf', start_page=0, end_page=1))
+# ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/6.pdf', start_page=0, end_page=1))
+# ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/8.pdf', start_page=0, end_page=1))
+# ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/9.pdf', start_page=0, end_page=1))
+# ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/10.pdf', start_page=0, end_page=1))
+# ic(fr_rus_eng.restore_text_fontforge(f'{qqq}/11.pdf', start_page=0, end_page=1))
+
 # print(fr_rus_eng.restore_text_fontforge(f'{q}/q.pdf', start_page=0, end_page=1))
 
-
+#
 # import text_action.analize
 # print('Hиman'.lower())
 # print(text_action.analize.find_closest_word('austrazian'))
@@ -35,3 +42,8 @@ import re
 # \GDE \GDA \GDB
 # \x01 \x02 \x03
 # \Differer
+#Contact us here secunet.com/safesurfer □□□□□□□□□□□ '
+#'□□□□□□□□□□□□□□□□□□ □□□□□□□□□□□□□□□□□□ □□□□□□□□□□□ secunet is а security '
+#'partner of the German Federal Government and а member of all relevant '
+#'industry associations. ')
+#

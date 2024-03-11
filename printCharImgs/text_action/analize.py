@@ -58,7 +58,7 @@ def analise_string(string: str):
 
 def analise_word(string: str):
     l = list(string)
-    print(string)
+    # print(string)
 
     letters = {x: string.count(x) for x in string}
     latin = sum([val for val, key in zip(letters.values(), letters.keys()) if key in eng])

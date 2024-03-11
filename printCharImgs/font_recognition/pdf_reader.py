@@ -11,6 +11,7 @@ from PIL import Image
 from fontTools.agl import toUnicode
 from fontTools.pens.boundsPen import BoundsPen
 from fontTools.ttLib import TTFont
+from icecream import ic
 
 import config
 import main
@@ -106,36 +107,48 @@ class PDFReader:
         for font_file in font_files:
             font_white_spaces = {}
             fontname = os.fsdecode(font_file)
-            print("fontname", fontname)
+
+            # print("fontname", fontname)
+
             fontname = fontname.split('.')[0]
             fontname = re.split(junkstring, fontname)[0]
-            print("split", re.split(junkstring, fontname))
+
+            # print("split", re.split(junkstring, fontname))
+
             save_path = f"{self.glyphs_path}/{fontname}"
             if not os.path.isdir(save_path):
                 os.makedirs(save_path)
             font_path = fr'"{self.fonts_path}/{os.fsdecode(font_file)}"'
             save_path = fr'"{save_path}"'
             warnings.warn('glyph#### how to parse')
-            result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py False {save_path} {font_path}")
-            result = result.decode('utf-8')
-            result = set(ast.literal_eval(result))
-            for img in result:
-                if handle_image.is_empty(img) and img.split('.')[-1] == 'png':
-                    uni_whitespace = img.split('/')[-1].split('.')[0]
-                    name = ''
-                    try:
-                        name = chr(int(uni_whitespace))
-                    except:
-                        name = uni_whitespace
-                    if name == '■': #278.json
-                        q = 1
-                    font_white_spaces[name] = ' '
-                    os.remove(img)
-                    continue
+            result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py False {save_path} {font_path}", stderr=DEVNULL)
+            # result = result.decode('utf-8')
+            # result = set(ast.literal_eval(result))
+            result = ast.literal_eval(result.decode('utf-8'))
+            okay_images = set(result[0])
+            empty_images = result[1]
+            # for img in result:
+            #     if handle_image.is_empty(img) and img.split('.')[-1] == 'png':
+            #         uni_whitespace = img.split('/')[-1].split('.')[0]
+            #         uni_whitespace = re.sub(r'_junkstring\d*', '', uni_whitespace)
+            #         name = ''
+            #         try:
+            #             name = chr(int(uni_whitespace))
+            #         except:
+            #             name = uni_whitespace
+            #         if name == '■': #278.json
+            #             q = 1
+            #         font_white_spaces[name] = ' '
+            #         os.remove(img)
+            #         continue
+            #     correctly_resize(img)
+            # white_spaces[fontname] = font_white_spaces
+
+            for img in okay_images:
                 correctly_resize(img)
-            white_spaces[fontname] = font_white_spaces
+            white_spaces[fontname] = empty_images
         self.white_spaces = white_spaces
-        print("whitespaces", self.white_spaces)
+        # print("whitespaces", self.white_spaces)
 
     def __extract_fonts(self):
         if os.path.isdir(self.fonts_path):
@@ -160,7 +173,9 @@ class PDFReader:
                     continue
                 xref_visited.append(xref)
                 font = doc.extract_font(xref, named=True)
-                print(page_num, font['name'], font['ext'])
+
+                # ic(page_num, font['name'], font['ext'])
+
                 # if font['ext'] != "n/a" and font['ext'] != 'cff':
                 # if font['ext'] != "n/a":
                 # if font['ext'] in ["otf", "ttf"]:

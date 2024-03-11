@@ -8,6 +8,7 @@ import PyPDF2
 import cv2
 import fitz
 import numpy as np
+import unicodedata
 from fontTools.agl import toUnicode
 from fontTools.ttLib import TTFont
 from pdfminer.converter import PDFPageAggregator, TextConverter
@@ -25,7 +26,7 @@ import config
 import text_action.analize
 from cnn_model import *
 from config import DefaultModel
-from src.utils import junkstring
+from src.utils import junkstring, remove_junk, remove_ext
 from text_action import analize
 from .pdf_reader import PDFReader
 
@@ -67,6 +68,7 @@ class FontRecognizer:
         self.differences_of_fonts = None
         self.fontname2basefont = {}
         self.reverse_unicodemaps = {}
+        self.no_cmap_in_font = {}
 
     @classmethod
     def load_default_model(cls, default_model: DefaultModel = DefaultModel.Russian_and_English):
@@ -98,6 +100,7 @@ class FontRecognizer:
         Exception("no use")
         self.text = None
         self.match_dict = {}
+
         self.reader.read(pdf_path)
         fonts_match_dict = self.__match_glyphs_and_encoding_for_all
         # self.text = self.__restore_text(pdf_path, fonts_match_dict, start=start_page, end=end_page)
@@ -113,10 +116,11 @@ class FontRecognizer:
         assert end_page > start_page or start_page == end_page == 0, "wrong pages range"
         self.text = ''
         self.match_dict = {}
+        self.no_cmap_in_font = {}
         self.reader.read(pdf_path)
-        # self.match_dict = self.reader.white_spaces
-        warnings.warn('ya removed whitespaces')
-        warnings.warn('right now ignoring #.superior')
+        self.match_dict = self.reader.white_spaces
+        # warnings.warn('ya removed whitespaces')
+        # warnings.warn('right now ignoring #.superior')
         self.__match_glyphs_and_encoding_for_all_fontforge
         fonts_match_dict = self.match_dict
         self.text = self.__restore_text2(pdf_path, fonts_match_dict, start=start_page, end=end_page)
@@ -136,71 +140,6 @@ class FontRecognizer:
         # return
         for i in self.text:
             print(i)
-
-    def __restore_text(self, pdf_path, dictionary, start=0, end=0):
-        doc = fitz.open(pdf_path)
-        text = []
-        text_str = ""
-        if end == 0:
-            end = doc.page_count
-        pages = [doc[i] for i in range(start, end)]
-        for page in pages:
-            sentence = ""
-            for blocks in page.get_text("dict", flags=95)['blocks']:
-                try:
-                    for lines in blocks['lines']:
-                        line_text = ""
-                        for spans in lines['spans']:
-                            word = ""
-                            if 'text' not in spans:
-                                continue
-                            # binary = f'{spans["text"]}'.encode('utf-8')
-                            d = spans['text'] = spans['text'].replace('\r', '')
-                            w = spans['font']
-                            print(d)
-                            for index, char in enumerate(d):
-                                if char in ['\t', ' ']:
-                                    word += ' '
-                                    continue
-                                try:
-                                    if char in dictionary[spans['font']]:
-                                        word += dictionary[spans['font']][char]
-                                        # word += "*"
-                                    elif char in self.reader.white_spaces[spans['font'].split('.')[0]]:
-                                        word += " "
-                                    else:
-                                        # word += char
-                                        word += '□'
-                                    # print(char, spans['font'])
-                                except KeyError:
-                                    word += '*'
-                                    # word += char
-                            line_text += word
-                        line_text = line_text.lstrip(' ').rstrip(' ')
-                        sentence += line_text
-                        # print(sentence)
-                        if line_text:
-                            sentence += ' '
-                        if len(sentence) >= 2 and sentence[-1] == "\n" and sentence[-2] == "\n":
-                            continue
-                        # if len(line_text) > 0 and line_text[-1] not in string.punctuation:
-                        #     sentence += " "
-                        #     continue
-
-                        # ne nado
-                        # sentence += '\n'
-
-                        # if sentence[-1] in string.punctuation:
-                        #     sentence += '\n'
-                    # sentence += ' '
-                    # sentence = sentence.strip()
-                except KeyError:
-                    pass
-            # print("sentence", sentence)
-            sentence = sentence.strip()
-            # text.append(sentence)
-            text_str += sentence
-        return text_str
 
     def __restore_text2(self, pdf_path, dictionary, start=0, end=0):
         fulltext = ''
@@ -287,8 +226,9 @@ class FontRecognizer:
 
     @property
     def __match_glyphs_and_encoding_for_all(self):
+        Exception("dead")
         img_folders = self.reader.get_glyphs_path()
-        print("glyphpath", self.reader.get_glyphs_path())
+        # print("glyphpath", self.reader.get_glyphs_path())
         # extracted_fonts_folder = os.path.join(ROOT_DIR, config.folders.get('extracted_data_folder'), "extracted_fonts")
         extracted_fonts_folder = config.folders.get("extracted_fonts_folder")
         # extracted_fonts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), extracted_fonts_folder)
@@ -302,7 +242,7 @@ class FontRecognizer:
             fitz_font = fitz.Font(fontfile=font_file)
             font_name_images = fontname.split('.')[0]
             font_name_images = font_name_images.split(junkstring)[0]
-            print("fontnameimgs", font_name_images)
+            # print("fontnameimgs", font_name_images)
             # matching_res = self.__match_glyphs_and_encoding(ttf_font, fitz_font, img_folders + font_name_images)
             matching_res = self.__match_glyphs_and_encoding(ttf_font, fitz_font,
                                                             os.path.join(img_folders, font_name_images))
@@ -312,13 +252,13 @@ class FontRecognizer:
                                                                                                  dicts[
                                                                                                      font_name_images.split(
                                                                                                          '+')[1]]
-        print(dicts)
+        # print(dicts)
         return dicts
 
     @property
     def __match_glyphs_and_encoding_for_all_fontforge(self):
         img_folders = self.reader.get_glyphs_path()
-        print("glyphpath", self.reader.get_glyphs_path())
+        # print("glyphpath", self.reader.get_glyphs_path())
         # extracted_fonts_folder = os.path.join(ROOT_DIR, config.folders.get('extracted_data_folder'), "extracted_fonts")
         extracted_fonts_folder = config.folders.get("extracted_fonts_folder")
         # extracted_fonts_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), extracted_fonts_folder)
@@ -328,17 +268,18 @@ class FontRecognizer:
         dicts = {}
         for font_file in fonts:
             fontname = font_file.split('\\')[-1]
+            self.no_cmap_in_font[remove_ext(remove_junk(fontname))] = True
             font_name_images = fontname.split('.')[0]
             font_name_images = font_name_images.split(junkstring)[0]
-            print("fontnameimgs", font_name_images)
-            matching_res = self.__match_glyphs_and_encoding_fontforge(os.path.join(img_folders, font_name_images))
+            # print("fontnameimgs", font_name_images)
+            matching_res = self.__match_glyphs_and_encoding_fontforge(os.path.join(img_folders, font_name_images), fontname)
             # print(font_file, font_name_images)
             font_name_without_prefix = font_name_images.split('+')[1] if '+' in font_name_images else font_name_images
             dicts[font_name_images] = matching_res if font_name_without_prefix not in dicts else matching_res | \
                                                                                                  dicts[
                                                                                                      font_name_images.split(
                                                                                                          '+')[1]]
-        print(dicts)
+        # print(dicts)
         # self.match_dict = {**self.match_dict, **dicts}
         # self.match_dict = dicts
         merged_dict = {}
@@ -350,7 +291,7 @@ class FontRecognizer:
         return self.match_dict
 
     def __match_glyphs_and_encoding(self, ttf_font, fitz_font, images):
-
+        Exception("dead")
         images = glob.glob(images + "/*")
         dictionary = {}
         if 'cmap' in ttf_font:
@@ -375,7 +316,7 @@ class FontRecognizer:
 
         return dictionary
 
-    def __match_glyphs_and_encoding_fontforge(self, images):
+    def __match_glyphs_and_encoding_fontforge(self, images, fontname):
 
         images = glob.glob(images + "/*")
         dictionary = {}
@@ -385,16 +326,21 @@ class FontRecognizer:
             # key = ((img.split('\\')[-1]).split('.')[0]).split('_')[0]
             key = img.split('\\')[-1].split('.')
             key = ''.join(key[:-1])
+            key = re.sub(r'_junkstring\d*', '', key)
             # if len(key) == 2:
             #     key = key[0]
             # else:
             #     key = ''.join(key[:-1])
             pred = self.model.recognize_glyph(img)
             char = chr(int(pred))
+            clear_fontname = remove_ext(remove_junk(fontname))
             try:
                 dictionary[chr(int(key))] = chr(int(pred))
                 k = chr(int(key))
+                self.no_cmap_in_font[clear_fontname] = False
             except:
+                # self.no_cmap_in_font[clear_fontname] = True
+                self.no_cmap_in_font[clear_fontname] = True and self.no_cmap_in_font[clear_fontname]
                 dictionary[key] = chr(int(pred))
                 k = key
             if char.isalpha():
@@ -418,55 +364,118 @@ class FontRecognizer:
         return dictionary
 
     def walk(self, o: Any, differences_of_fonts: dict, fulltext: str):
-        if isinstance(o, (LTTextBox, LTTextBoxVertical, LTTextBoxHorizontal)):
-            q = 1
         if isinstance(o, LTChar):
             char = o.get_text()
             match_dict_key = self.fontname2basefont[o.fontname]
-            if not differences_of_fonts[o.fontname]:
-                try:
-                    if char not in self.match_dict[match_dict_key]:
-                        key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
-                        o._text = self.match_dict[match_dict_key][key]
-                        # o._text = '□'
-                    else:
-                        o._text = self.match_dict[match_dict_key][char]
-                        # o._text = '□'
-                except:
-                    o._text = char
-                    # o._text = '□'
-                    return
-                return
-            index = -1
-            if 'cid' in char:
-                index = int(char[1:-1].split(':')[-1])
-            # elif char in self.reverse_unicodemaps[match_dict_key] and (key:=f'glyph{self.reverse_unicodemaps[match_dict_key][char]}' in self.match_dict[match_dict_key]):
-            elif len(char) == 1 and char in (w := self.reverse_unicodemaps[match_dict_key]) and char != chr(w[char]):
-                key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
-                index = self.match_dict[match_dict_key][key]
-            else:
-                try:
-                    index = ord(char)
-                    if ord(char) > len(differences_of_fonts[o.fontname]) and char == '’':
-                        char = "'"
-                        index = ord(char)
-                    elif ord(char) > len(differences_of_fonts[o.fontname]):
-                        # index = len(cached_fonts[o.fontname])-1
-                        # o._text = '□'
-                        o._text = self.match_dict[match_dict_key][char]
-                        return
-                except:
-                    # o._text = '□'
-                    o._text = char
-                    return
+            new_char = ''
             try:
-                glyph_name = differences_of_fonts[o.fontname][index]
-                fulltext += self.match_dict[match_dict_key][glyph_name]
-                o._text = self.match_dict[match_dict_key][glyph_name]
-                # o._text = '□'
+                # if 'cid' in char: #if pdfminer sees hex it can't turn to ascii like \x01 it turns into
+                #                   # (cid:01) or (cid:1) | ne pomny(
+                #     index = int(char[1:-1].split(':')[-1])
+                #     glyph_name = differences_of_fonts[o.fontname][index]
+                #     new_char = self.match_dict[match_dict_key][glyph_name]
+                # elif not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
+                #     key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+                #     new_char = self.match_dict[match_dict_key][key]
+                # elif not differences_of_fonts[o.fontname]:
+                #     new_char = self.match_dict[match_dict_key][char]
+                # elif len(char) == 1 and char in (w := self.reverse_unicodemaps[match_dict_key]) and char != chr(w[char]):
+                #     key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+                #     new_char = self.match_dict[match_dict_key][key]
+                # else:
+                #     if ord(char) > len(differences_of_fonts[o.fontname]) and char == '’':
+                #         char = "'"
+                #         index = ord(char)
+                #         glyph_name = differences_of_fonts[o.fontname][index]
+                #         new_char = self.match_dict[match_dict_key][glyph_name]
+                #     elif ord(char) < len(differences_of_fonts[o.fontname]):
+                #         # o._text = '□'
+                #         index = ord(char)
+                #         glyph_name = differences_of_fonts[o.fontname][index]
+                #         new_char = self.match_dict[match_dict_key][glyph_name]
+                #     else:
+                #         new_char = self.match_dict[match_dict_key][char]
+                #         # new_char = '□'
+                if o.fontname not in self.match_dict:
+                    o._text = char
+                    return
+                if 'cid' in char:  # if pdfminer sees hex it can't turn to ascii like \x01 it turns into
+                    # (cid:01) or (cid:1) | ne pomny(
+                    index = int(char[1:-1].split(':')[-1])
+                    glyph_name = differences_of_fonts[o.fontname][index]
+                    new_char = self.match_dict[match_dict_key][glyph_name]
+                # elif len(differences_of_fonts[o.fontname]) > 0 and (char == '’' or ord(char) < len(differences_of_fonts[o.fontname])):
+                elif char not in self.match_dict[match_dict_key] and len(differences_of_fonts[o.fontname]) > 0 and (char == '’' or ord(char) < len(differences_of_fonts[o.fontname])):
+                    if char == '’':
+                        char = "'"
+                    index = ord(char)
+                    glyph_name = differences_of_fonts[o.fontname][index]
+                    new_char = self.match_dict[match_dict_key][glyph_name]
+                elif self.no_cmap_in_font[match_dict_key] and not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
+                # elif not self.no_cmap_in_font[match_dict_key] and not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
+                    key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+                    new_char = self.match_dict[match_dict_key][key]
+                # elif char not in self.match_dict[match_dict_key] and self.match_dict[match_dict_key] and len(char) == 1 and match_dict_key in self.reverse_unicodemaps and char in (w := self.reverse_unicodemaps[match_dict_key])  and char != chr(w[char]):
+                elif self.no_cmap_in_font[match_dict_key] and self.match_dict[match_dict_key] and len(char) == 1 and match_dict_key in self.reverse_unicodemaps and char in (w := self.reverse_unicodemaps[match_dict_key])  and char != chr(w[char]):
+                    key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+                    new_char = self.match_dict[match_dict_key][key]
+                else:
+                    new_char = self.match_dict[match_dict_key][char]
             except:
-                # o._text = '□'
-                o._text = char
+                if len(char) == 1:
+                    new_char = '□'
+                else:
+                    new_char = char
+
+            o._text = new_char
+
+            # if not differences_of_fonts[o.fontname]:
+            #     try:
+            #         if char not in self.match_dict[match_dict_key]:
+            #             key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+            #             o._text = self.match_dict[match_dict_key][key]
+            #             # o._text = '□'
+            #         else:
+            #             o._text = self.match_dict[match_dict_key][char]
+            #             # o._text = '□'
+            #     except:
+            #         o._text = char
+            #         # o._text = '□'
+            #         return
+            #     return
+            # index = -1
+            # if 'cid' in char: #if pdfminer sees hex it can't turn to ascii like \x01 it turns into
+            #                   # (cid:01) or (cid:1) | ne pomny(
+            #     index = int(char[1:-1].split(':')[-1])
+            # # elif char in self.reverse_unicodemaps[match_dict_key] and (key:=f'glyph{self.reverse_unicodemaps[match_dict_key][char]}' in self.match_dict[match_dict_key]):
+            # elif len(char) == 1 and char in (w := self.reverse_unicodemaps[match_dict_key]) and char != chr(w[char]):
+            #     key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
+            #     o._text = self.match_dict[match_dict_key][key]
+            #     return
+            # else:
+            #     try:
+            #         index = ord(char)
+            #         if ord(char) > len(differences_of_fonts[o.fontname]) and char == '’':
+            #             char = "'"
+            #             index = ord(char)
+            #         elif ord(char) > len(differences_of_fonts[o.fontname]):
+            #             # index = len(cached_fonts[o.fontname])-1
+            #             # o._text = '□'
+            #             o._text = self.match_dict[match_dict_key][char]
+            #             return
+            #     except:
+            #         o._text = '□'
+            #         # o._text = char
+            #         return
+            # try:
+            #     glyph_name = differences_of_fonts[o.fontname][index]
+            #     o._text = self.match_dict[match_dict_key][glyph_name]
+            #     # o._text = '□'
+            # except:
+            #     o._text = '□'
+            #     # o._text = char
+
+
         elif isinstance(o, Iterable):
             for i in o:
                 self.walk(i, differences_of_fonts, fulltext)

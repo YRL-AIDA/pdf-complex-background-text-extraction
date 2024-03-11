@@ -18,7 +18,7 @@ def compare_two_strings_with_orig(cnn_string: str, tabby_string: str, orig: str)
     print(f"cnn text: {cnn_string}")
 
 
-def compare_dedoc_and_cnn(pdfs_path, txts_path, recognizer: FontRecognizer):
+def compare_dedoc_and_cnn(pdfs_path, json_path, recognizer: FontRecognizer):
     data = {
         "pdf_with_text_layer": "false",
         "document_type": "other",
@@ -32,7 +32,7 @@ def compare_dedoc_and_cnn(pdfs_path, txts_path, recognizer: FontRecognizer):
     }
     pdfs = glob.glob(f"{pdfs_path}/*.pdf")
     # txts = glob.glob(f'{txts_path}/*.txt')
-    txts = glob.glob(f'{txts_path}/*.json')
+    txts = glob.glob(f'{json_path}/*.json')
     pdfnames = [pdfname.split('\\')[-1].split('.')[0] for pdfname in pdfs]
     txtnames = [txtname.split('\\')[-1].split('.')[0] for txtname in txts]
     txts_and_pdfs = list(set(pdfnames).intersection(txtnames))
@@ -40,9 +40,10 @@ def compare_dedoc_and_cnn(pdfs_path, txts_path, recognizer: FontRecognizer):
         print(name)
         # txt_path = f'../data/txts/{name}.txt'
         # txt_path = f'{txts_path}/{name}.txt'
-        txt_path = f'{txts_path}/{name}.json'
+        txt_path = f'{json_path}/{name}.json'
         # pdf_path = f'../data/pdf/{name}.pdf'
         pdf_path = f'{pdfs_path}/{name}.pdf'
+        ic(pdf_path)
         with open(txt_path, 'r', encoding='utf-8') as file:
             orig = json.load(file)
         start_page = orig['pages'][0]
@@ -63,7 +64,7 @@ def create_json_with_copied_text(pdf_path, pages: list = None):
     assert len(pages) == 2, "pages should be of len 2"
     assert pages[0] == pages[1] == 0 or pages[0] < pages[1], "wrong range"
     pages_range = list(range(pages[0], pages[1]))
-    ic(pages_range)
+    # ic(pages_range)
     pdf_path = os.path.normpath(pdf_path)
     pdf_name = pdf_path.split('\\')[-1].split('.')[0]
     json_path = os.path.normpath(f'{ROOT_DIR}/data/jsons/{pdf_name}.json')
@@ -71,7 +72,7 @@ def create_json_with_copied_text(pdf_path, pages: list = None):
     text = extract_text(pdf_path, page_numbers=pages_range)
     text = collapse_text(text)
     text = remove_hyphenations(text)
-    ic(text)
+    # ic(text)
     json_dict = {"pages": pages, "text": text}
     with open(json_path, 'w', encoding='utf-8') as file:
         json.dump(json_dict, file, indent=4, ensure_ascii=False)
@@ -81,7 +82,7 @@ def create_json_with_copied_text(pdf_path, pages: list = None):
 # q = f'{ROOT_DIR}/qwerty'
 # ic(os.path.normpath("../data/check_pdf/3.pdf"))
 # ic(extract_text("../data/check_pdf/3.pdf", page_numbers=[0]))
-create_json_with_copied_text("../data/check_pdf/12.pdf", pages=[2, 3])
+create_json_with_copied_text("../data/check_pdf/13.pdf", pages=[3, 4])
 # ic(extract_text("../data/check_pdf/5.pdf", page_numbers=[1]))
 # print(ROOT_DIR)
 # from font_recognition import font_recognizer

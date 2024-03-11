@@ -2,6 +2,7 @@ import sys
 import warnings
 
 import fontforge
+from src.utils import append_junk
 
 image_size = 80
 
@@ -40,19 +41,22 @@ def generate_all_images(save_path, font_path):
     font = fontforge.open(font_path)
     save_paths = []
     # names = []
+    counter = 0
+    empty_imgs = {}
     for name in font:
         # names.append(name)
         try:
-            if 'superior' in name:
+            counter += 1
+            if name == 'space':
+                empty_imgs[' '] = ' '
                 continue
-            if 'eight' == name:
-                q = 1
-            if not font[name].isWorthOutputting() and name != 'space':
+            if not font[name].isWorthOutputting():
                 continue
             # if name.startswith('glyph'):
             #     # name = chr(int(name.removeprefix('glyph')))
             try:
-                filename = str(ord(name)) + ".png"
+                # filename = str(ord(name)) + ".png"
+                filename = str(ord(name))
                 # filename = save_name + ".png"
             except:
                 # try:
@@ -64,18 +68,27 @@ def generate_all_images(save_path, font_path):
                     continue
 
                 if unicode_by_name == '-1':
-                    filename = name + ".png"
+                    # filename = name + ".png"
+                    filename = name
                 else:
-                    filename = unicode_by_name + '.png'
+                    filename = unicode_by_name
+
+            filename = append_junk(filename, counter)
+            filename = f'{filename}.png'
             char_save_path = f"{save_path}/{filename}"
             if name == ".notdef" or filename == '-1.png':
                 continue
             # font[name].export(char_save_path, 29)
+            if (font[name].width == 0 or font[name].foreground.isEmpty() == 1) and len(font[name].references) == 0:
+                # empty_imgs.append(name)
+                empty_imgs[name] = ' '
+                continue
+
             font[name].export(char_save_path, image_size)
             save_paths.append(char_save_path)
         except:
             continue
-    return save_paths
+    return save_paths, empty_imgs
 
 
 if __name__ == "__main__":
