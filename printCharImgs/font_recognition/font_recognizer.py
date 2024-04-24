@@ -8,6 +8,7 @@ import PyPDF2
 import cv2
 import fitz
 import numpy as np
+import pdfminer.cmapdb
 import unicodedata
 from fontTools.agl import toUnicode
 from fontTools.ttLib import TTFont
@@ -36,7 +37,9 @@ fitz.TOOLS.set_subset_fontnames(True)
 
 # BAZA
 
-
+warnings.warn('''Закоментил условие self.no_cmap_in_font[match_dict_key] and not differences_of_fonts[o.fontname]
+ and char not in self.match_dict[match_dict_key], потому что одно подмножество одного шрифта имеет cmap а другое нет и надо думать как правильно разбираться
+ к какому именно из подмножеств относится LTChar''')
 class FontRecognizer:
     # def __init__(self, *args, **kwargs):
     #     self.default_model_lang = None
@@ -411,7 +414,8 @@ class FontRecognizer:
                     index = ord(char)
                     glyph_name = differences_of_fonts[o.fontname][index]
                     new_char = self.match_dict[match_dict_key][glyph_name]
-                elif self.no_cmap_in_font[match_dict_key] and not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
+                # elif self.no_cmap_in_font[match_dict_key] and not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
+                elif not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
                 # elif not self.no_cmap_in_font[match_dict_key] and not differences_of_fonts[o.fontname] and char not in self.match_dict[match_dict_key]:
                     key = f'glyph{self.reverse_unicodemaps[match_dict_key][char]}'
                     new_char = self.match_dict[match_dict_key][key]

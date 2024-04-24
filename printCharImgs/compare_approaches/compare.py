@@ -6,6 +6,7 @@ import glob
 from Levenshtein import ratio
 from icecream import ic
 from pdfminer.high_level import extract_text
+import time
 
 from font_recognition import FontRecognizer
 from main import ROOT_DIR
@@ -14,8 +15,8 @@ from text_action.analize import collapse_text, remove_hyphenations
 
 def compare_two_strings_with_orig(cnn_string: str, tabby_string: str, orig: str):
     print(f"tabby: {ratio(orig, tabby_string)}, cnn: {ratio(orig, cnn_string)}")
-    print(f"tabby text: {tabby_string}")
-    print(f"cnn text: {cnn_string}")
+    # print(f"tabby text: {tabby_string}")
+    # print(f"cnn text: {cnn_string}")
 
 
 def compare_dedoc_and_cnn(pdfs_path, json_path, recognizer: FontRecognizer):
@@ -25,7 +26,7 @@ def compare_dedoc_and_cnn(pdfs_path, json_path, recognizer: FontRecognizer):
         "language": "rus+eng",
         "need_pdf_table_analysis": "true",
         "need_header_footer_analysis": "false",
-        "is_one_column_document": "true",
+        "is_one_column_document": "auto",
         "return_format": 'plain_text',
         "structure_type": 'tree',
         'pages': '1:1'
@@ -37,7 +38,6 @@ def compare_dedoc_and_cnn(pdfs_path, json_path, recognizer: FontRecognizer):
     txtnames = [txtname.split('\\')[-1].split('.')[0] for txtname in txts]
     txts_and_pdfs = list(set(pdfnames).intersection(txtnames))
     for name in txts_and_pdfs:
-        print(name)
         # txt_path = f'../data/txts/{name}.txt'
         # txt_path = f'{txts_path}/{name}.txt'
         txt_path = f'{json_path}/{name}.json'
@@ -49,14 +49,19 @@ def compare_dedoc_and_cnn(pdfs_path, json_path, recognizer: FontRecognizer):
         start_page = orig['pages'][0]
         end_page = orig['pages'][1]
         data['pages'] = f"{start_page + 1}:{end_page}"
+        start_dedoc = time.time()
         with open(pdf_path, 'rb') as file:
             files = {'file': (pdf_path, file)}
             r = requests.post("http://localhost:1231/upload", files=files, data=data)
             result = r.content.decode('utf-8')
             tabby_text = ' '.join(result.split())
+        end_dedoc = time.time()
 
+        start_recognizer = time.time()
         cnn_text = recognizer.restore_text_fontforge(pdf_path, start_page=start_page, end_page=end_page)
-        compare_two_strings_with_orig(cnn_string=cnn_text, tabby_string=tabby_text, orig=orig['text'])
+        end_recognizer = time.time()
+        # compare_two_strings_with_orig(cnn_string=cnn_text, tabby_string=tabby_text, orig=orig['text'])
+        print(f'{name}/ dedoc: {(end_dedoc-start_dedoc) * 10**3}ms |||| cnn:{(end_recognizer-start_recognizer) * 10**3}ms')
 
 
 def create_json_with_copied_text(pdf_path, pages: list = None):

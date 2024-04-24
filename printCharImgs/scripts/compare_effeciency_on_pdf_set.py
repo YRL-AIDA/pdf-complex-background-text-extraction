@@ -1,11 +1,17 @@
 import glob
 import os
+import threading
+
+import psutil
 from Levenshtein import ratio
 import requests
 from pathlib import Path
+
+from icecream import ic
+
 from font_recognition import FontRecognizer
 from compare_approaches import compare
-
+import tracemalloc
 #
 # data = {
 #     "pdf_with_text_layer": "false",
@@ -85,9 +91,44 @@ from compare_approaches import compare
 # norm = ['154', '278.json', '767']
 # p = "../data/checkpdf2/q.pdf"
 # tabby_text = 'Australasian Information Evaluation Program | | Report Junos OS 20. 2R1 for SRX345, И SRX345- DUAL- AC, SRX380 and: SR X1500 О Nersion 1:6, 03 December Ам. > = РЕ чиччиче -- > до мч. - > ААчАШФеллд = ‹ ‹ о - - - - ФА..--.--- eee и чо ч esr BOP > р < Ш} > > ACP > ee | | < < YO © Ир or acer hr rh mh wr Br aA > mr ДА > OdOP чь © АЩЬ ee ee >> > ор rca COAAAP sr Adi но + > чочь <> erra maa aap eon «Ш Ar > Ар < > <r с Бег. ома dP у 9 и ДА > = <> ss дор <> и ор 4 4» › «cc. ччор <'
+
+def display_cpu():
+    global running
+
+    running = True
+
+    currentProcess = psutil.Process()
+    tracemalloc.start()
+    # start loop
+    while running:
+        ic(currentProcess.cpu_percent(interval=1))
+        ic(psutil.virtual_memory().percent)
+
+def start():
+    global t
+
+    # create thread and start it
+    t = threading.Thread(target=display_cpu)
+    t.start()
+
+def stop():
+    global running
+    global t
+
+    # use `running` to stop loop in thread so thread will end
+    running = False
+    tracemalloc.stop()
+    # wait for thread's end
+    t.join()
+
+
+# tracemalloc.start()
+# start()
 recognizer = FontRecognizer.load_default_model()
 # cnn_text = recognizer.restore_text_fontforge(f'{q}/{norm[-1]}.pdf', start_page=0, end_page=1)
 # orig = 'Australasian Information Security Evaluation Program  Certification Report Juniper Junos OS 20.2R1 for SRX345, SRX345-DUAL-AC, SRX380 and SRX1500 Version 1.0, 03 December 2020'
 # compare.compare_two_strings_with_orig(cnn_text, tabby_text, orig)
 
 compare.compare_dedoc_and_cnn("../data/check_pdf", "../data/jsons", recognizer)
+# stop()
+# tracemalloc.stop()

@@ -13,7 +13,7 @@ data = {
     "is_one_column_document": "false",
     "return_format": 'plain_text',
     "structure_type": 'tree',
-    'pages': '4:4',
+    'pages': '1:1',
     'pdf_with_text_layer': 'false'
 }
 
@@ -21,7 +21,7 @@ q = "../data/checkpdf2"
 qq = "../data/checkpdf"
 qqq = "../data/check_pdf"
 norm = ['154', '278.json', 'hz', 'hz2', 'hz3']
-pdf = f'{qqq}/13.pdf'
+pdf = f'{qqq}/3.pdf'
 with open(pdf, 'rb') as file:
     ic(f'pdf name: {pdf}')
     files = {'file': (pdf, file)}
