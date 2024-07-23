@@ -18,3 +18,7 @@ printCharImgs/data/pdfdata
 *.txt
 *.json
 *.keras
+*.xml
+*.iml
+stuff.py
+printCharImgs

@@ -1,10 +1,13 @@
 import glob
 import os
+from pathlib import Path
+from utils.functions import get_project_root
+
 from keras.models import load_model
 
 import enum
 
-from main import ROOT_DIR
+ROOT_DIR = get_project_root()
 
 char_pool = dict(
     rus_eng=['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
@@ -54,19 +57,16 @@ convert = dict(
 )
 
 folders = dict(
-    # fonts_folder="data/fonts/fonts",
-    fonts_folder=os.path.join(ROOT_DIR, "data/fonts/fonts"),
-    # images_folder="data/datasets/images",
-    images_folder=os.path.join(ROOT_DIR, "data/datasets/test2"),
-    output_train=os.path.join(ROOT_DIR, "data/datasets/images/output"),
-    last_prepared_data=os.path.join(ROOT_DIR, "data/datasets/last_prepared"),
-    extracted_data_folder=os.path.join(ROOT_DIR, "data/pdfdata"),
-    extracted_fonts_folder=os.path.join(ROOT_DIR, "data/pdfdata/extracted_fonts"),
-    extracted_glyphs_folder=os.path.join(ROOT_DIR, "data/pdfdata/glyph_images"),
-    default_models_folder=os.path.join(ROOT_DIR, "data/default_models"),
-    custom_models_folder=os.path.join(ROOT_DIR, "data/models_and_classnames"),
-    # default_models_folder="data/default_models",
-    # custom_models_folder="data/models_and_classnames",
+    fonts_folders=Path(ROOT_DIR, 'data', 'fonts_folders'),
+    images_folder=Path(ROOT_DIR, "data/datasets/test2"),
+    output_train=Path(ROOT_DIR, "data/datasets/images/output"),
+    last_prepared_data=Path(ROOT_DIR, "data/datasets/last_prepared"),
+    extracted_data_folder=Path(ROOT_DIR, "data/pdfdata"),
+    extracted_fonts_folder=Path(ROOT_DIR, "data/pdfdata/extracted_fonts"),
+    extracted_glyphs_folder=Path(ROOT_DIR, "data/pdfdata/glyph_images"),
+    default_models_folder=Path(ROOT_DIR, "data/models/default_models"),
+    custom_models_folder=Path(ROOT_DIR, "data/models/custom_models"),
+    datasets_folder=Path(ROOT_DIR, 'data', 'datasets')
 )
 
 default_models = [i.split('\\')[-1].split('.')[0] for i in
@@ -79,11 +79,6 @@ def chars_to_code(char_list: list):
     return [ord(i) for i in char_list]
 
 
-# class Language(enum.Enum):
-#     Russian_and_English = chars_to_code(char_pool['rus_eng_no_reg_diff'])
-#     Russian = chars_to_code(char_pool['rus_no_reg_diff'])
-#     English = chars_to_code(char_pool['eng_no_reg_diff'])
-
 class Language(enum.Enum):
     Russian_and_English_no_reg_diff = char_pool['rus_eng_no_reg_diff']
     Russian_no_reg_diff = char_pool['rus_no_reg_diff']
@@ -94,12 +89,11 @@ class Language(enum.Enum):
 
 
 class DefaultModel(enum.Enum):
-    Russian_and_English = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_eng.keras')),
+    Russian_and_English = {'model': load_model(Path(folders['default_models_folder'], 'rus_eng.keras')),
                            'labels': Language.Russian_and_English.value}
-    # Russian = {'model': load_model(os.path.join(folders['default_models_folder'], 'rus_no_reg_diff.keras')),
+    # Russian = {'model': load_model(Path(folders['default_models_folder'], 'rus_no_reg_diff.keras')),
     #            'labels': Language.Russian_no_reg_diff.value}
-    # English = {'model': load_model(os.path.join(folders['default_models_folder'], 'eng_no_reg_diff.keras')),
+    # English = {'model': load_model(Path(folders['default_models_folder'], 'eng_no_reg_diff.keras')),
     #            'labels': Language.English_no_reg_diff.value}
-
 
 russian_words = set()

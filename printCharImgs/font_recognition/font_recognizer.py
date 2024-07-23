@@ -211,8 +211,8 @@ class FontRecognizer:
             document = PDFDocument(parser)
             pages_count = resolve1(document.catalog['Pages'])['Count']
             end = pages_count if end == 0 else end
-            # pdf_reader = PyPDF2.PdfFileReader(fp)
-            # pages_count = pdf_reader.numPages
+            # pdf_reader.py = PyPDF2.PdfFileReader(fp)
+            # pages_count = pdf_reader.py.numPages
 
             rsrcmgr = PDFResourceManager()
             laparams = LAParams()
@@ -253,7 +253,6 @@ class FontRecognizer:
                     cached_fonts[f.fontname] = char_set_arr
                 self.cached_fonts = rsrcmgr._cached_fonts
                 self.walk(layout, cached_fonts, fulltext)
-
 
         self.text = analize.remove_hyphenations(self.text)
         return self.text
