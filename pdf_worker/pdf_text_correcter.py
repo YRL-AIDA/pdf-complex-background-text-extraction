@@ -124,21 +124,6 @@ def t9_text(text):
 
 def find_closest_word(word):
     w1 = word.lower()
-    # c1 = difflib.get_close_matches(w1, rus_and_eng_names[len(word)], n=5, cutoff=0.7)
-    # if not c1:
-    #     # r = substitute_chars_by_dict(convertdictrus, w1)
-    #     # e = substitute_chars_by_dict(convertdicteng, w1)
-    #     # c1 = (t := difflib.get_close_matches(r, rus_and_eng_names[len(word)], n=5,cutoff=0.9)) if t else c1 = difflib.get_close_matches(e, rus_and_eng_names[len(word)], n=5, cutoff=0.7)
-    #     # c1 = t if (t := difflib.get_close_matches(r, rus_and_eng_names[len(word)], n=5, cutoff=0.9)) else difflib.get_close_matches(e, rus_and_eng_names[len(word)], n=5, cutoff=0.9)
-    #     # if not c1:
-    #     #     return word
-    #     return word
-    # ans = c1[0]
-    #T t m M
-    #Т т м М
-    if word == 'uhcmumym':
-            qqqq = 1
-
     distances = np.array([distance(w1, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(w1)]])
     if distances.size == 0:
         return word
@@ -160,7 +145,7 @@ def find_closest_word(word):
     return ans2
 
 
-def correct_text2(text):
+def correct_collapsed_text(text):
     text = analise_string(text)
     text = correct_case(text)
     return text

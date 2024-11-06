@@ -6,7 +6,7 @@ import glob
 from Levenshtein import ratio
 from icecream import ic
 
-from font_recognition import FontRecognizer
+from pdf_worker.pdf_reader import PDFReader
 from main import ROOT_DIR
 from utils.functions import collapse_text, remove_hyphenations
 
@@ -17,7 +17,7 @@ def compare_two_strings_with_orig(cnn_string: str, tabby_string: str, orig: str)
     print(f"cnn text: {cnn_string}")
 
 
-def compare_dedoc_and_cnn(pdfs_path, txts_path, recognizer: FontRecognizer):
+def compare_dedoc_and_cnn(pdfs_path, txts_path, reader: PDFReader):
     data = {
         "pdf_with_text_layer": "false",
         "document_type": "other",
@@ -57,7 +57,7 @@ def compare_dedoc_and_cnn(pdfs_path, txts_path, recognizer: FontRecognizer):
             result = r.content.decode('utf-8')
             tabby_text = ' '.join(result.split())
 
-        cnn_text = recognizer.restore_text_fontforge(pdf_path, start_page=start_page, end_page=end_page)
+        cnn_text = reader.restore_text(pdf_path, start_page=start_page, end_page=end_page)
         compare_two_strings_with_orig(cnn_string=cnn_text, tabby_string=tabby_text, orig=orig['text'])
 
 

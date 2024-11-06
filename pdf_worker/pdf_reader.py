@@ -86,10 +86,10 @@ class PDFReader:
 
         self.__match_glyphs_and_encoding_for_all()
         fonts_match_dict = self.match_dict
-        self.text = self.__restore_text(pdf_path, fonts_match_dict, start=start_page, end=end_page)
+        self.text = self.__restore_text(pdf_path, start=start_page, end=end_page)
         self.text = re.sub(r'\s+', ' ', self.text)
         if self.__need2correct:
-            self.text = pdf_text_correcter.correct_text2(self.text)
+            self.text = pdf_text_correcter.correct_collapsed_text(self.text)
         return self.text
 
     def __read_pdf(self, pdf_path: Path):
@@ -187,7 +187,7 @@ class PDFReader:
 
         return dictionary
 
-    def __restore_text(self, pdf_path, dictionary, start=0, end=0):
+    def __restore_text(self, pdf_path, start=0, end=0):
         fulltext = ''
         self.__cached_fonts = None
         self.__fontname2basefont = {}
