@@ -46,65 +46,62 @@ for string in rus_and_eng_names:
 rus_and_eng_names = result
 
 
-def analise_string(string: str):
-    strings = string.split(' ')
+def correct_string_incorrect_chars(input_string: str):
+    strings = input_string.split(' ')
     ans = []
     for word in strings:
-        analized = analise_word(word)
+        analized = correct_word_incorrect_chars(word)
         if analized is not None:
             ans.append(analized)
     return " ".join(ans)
 
 
-def analise_word(string: str):
-    l = list(string)
-    print(string)
-    if 'ReСоBS' == string:
-        q = 1
-    letters = {x: string.count(x) for x in string}
+def correct_word_incorrect_chars(input_string: str):
+    list_of_strings = list(input_string)
+    letters = {x: input_string.count(x) for x in input_string}
     latin = sum([val for val, key in zip(letters.values(), letters.keys()) if key in eng])
     cyrrilic = sum([val for val, key in zip(letters.values(), letters.keys()) if key in rus])
 
-    converted = string
-    if any(char in string.lower() for char in onlyRus):
-        converted = substitute_chars_by_dict(convertdictrus, l)
-    elif any(char in string.lower() for char in onlyEng):
-        converted = substitute_chars_by_dict(convertdicteng, l)
+    converted = input_string
+    if any(char in input_string.lower() for char in onlyRus):
+        converted = substitute_chars_by_dict(convertdictrus, list_of_strings)
+    elif any(char in input_string.lower() for char in onlyEng):
+        converted = substitute_chars_by_dict(convertdicteng, list_of_strings)
     elif cyrrilic >= latin and latin + cyrrilic > 0:
-        converted = substitute_chars_by_dict(convertdictrus, l)
+        converted = substitute_chars_by_dict(convertdictrus, list_of_strings)
     elif latin > cyrrilic:
-        converted = substitute_chars_by_dict(convertdicteng, l)
+        converted = substitute_chars_by_dict(convertdicteng, list_of_strings)
     return converted
 
 
-def substitute_chars_by_dict(dict, word):
-    return "".join([(dict[item] if item.islower() else dict[item.lower()].upper())
-                    if item.lower() in dict else item for item in word])
+def substitute_chars_by_dict(substitutions_dict, word):
+    return "".join([(substitutions_dict[item] if item.islower() else substitutions_dict[item.lower()].upper())
+                    if item.lower() in substitutions_dict else item for item in word])
 
 
 def correct_text(text: List[str]):
     corrected_text = []
     for page in text:
         if not page.isspace():
-            res = analise_string(page)
+            res = correct_string_incorrect_chars(page)
             res = correct_case(res)
             corrected_text.append(res)
     return corrected_text
 
 
-def correct_case(string: str):
+def correct_case(input_string: str):
     new_string = ''
-    for i in range(len(string)):
+    for i in range(len(input_string)):
         if i == 0:
-            new_string += string[i]
-        elif string[i - 1].isalpha() and string[i - 1].islower() and i + 1 < len(string) and string[i + 1].isalpha() and \
-                string[i + 1].islower():
-            new_string += string[i].lower()
-        elif string[i - 1].isalpha() and string[i - 1].isupper() and i + 1 < len(string) and string[i + 1].isalpha() and \
-                string[i + 1].isupper():
-            new_string += string[i].upper()
+            new_string += input_string[i]
+        elif input_string[i - 1].isalpha() and input_string[i - 1].islower() and i + 1 < len(input_string) and input_string[i + 1].isalpha() and \
+                input_string[i + 1].islower():
+            new_string += input_string[i].lower()
+        elif input_string[i - 1].isalpha() and input_string[i - 1].isupper() and i + 1 < len(input_string) and input_string[i + 1].isalpha() and \
+                input_string[i + 1].isupper():
+            new_string += input_string[i].upper()
         else:
-            new_string += string[i]
+            new_string += input_string[i]
     return new_string
 
 
@@ -123,36 +120,36 @@ def t9_text(text):
 
 
 def find_closest_word(word):
-    w1 = word.lower()
-    distances = np.array([distance(w1, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(w1)]])
+    lower_word = word.lower()
+    distances = np.array([distance(lower_word, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(lower_word)]])
     if distances.size == 0:
         return word
-    if 1 - np.min(distances) / len(w1) < 0.8:
-        r = substitute_chars_by_dict(convertdictrus, w1)
-        e = substitute_chars_by_dict(convertdicteng, w1)
-        rd = np.array([distance(r, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(w1)]])
-        ed = np.array([distance(e, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(w1)]])
-        d = rd if np.min(rd) < np.min(ed) else ed
-        if d.size == 0 or 1 - (np.min(d) / len(w1)) < 0.8:
+    if 1 - np.min(distances) / len(lower_word) < 0.8:
+        russian_chars_word = substitute_chars_by_dict(convertdictrus, lower_word)
+        english_chars_word = substitute_chars_by_dict(convertdicteng, lower_word)
+        russian_dict = np.array([distance(russian_chars_word, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(lower_word)]])
+        english_dict = np.array([distance(english_chars_word, i.lower(), weights=(1000, 1000, 1)) for i in rus_and_eng_names[len(lower_word)]])
+        actual_word_dict = russian_dict if np.min(russian_dict) < np.min(english_dict) else english_dict
+        if actual_word_dict.size == 0 or 1 - (np.min(actual_word_dict) / len(lower_word)) < 0.8:
             return word
-        distances = d
+        distances = actual_word_dict
     min_index = int(np.argmin(distances))
-    ans2 = rus_and_eng_names[len(word)][min_index]
+    correct_word = rus_and_eng_names[len(word)][min_index]
     if word.isupper():
-        ans2 = ans2.upper()
+        correct_word = correct_word.upper()
     elif word[0].isupper():
-        ans2 = ans2.capitalize()
-    return ans2
+        correct_word = correct_word.capitalize()
+    return correct_word
 
 
 def correct_collapsed_text(text):
-    text = analise_string(text)
+    text = correct_string_incorrect_chars(text)
     text = correct_case(text)
     return text
 
 
 def correct_text_str(text):
-    return analise_string(text)
+    return correct_string_incorrect_chars(text)
 
 
 def remove_redundant_whitespaces(text):

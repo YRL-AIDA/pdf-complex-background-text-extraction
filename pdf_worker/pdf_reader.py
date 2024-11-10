@@ -13,8 +13,8 @@ import fitz
 import config
 from model.model import Model
 from pdf_worker import pdf_text_correcter
-from utils import functions
-from utils.functions import junk_string, correctly_resize
+from functions import functions
+from functions.functions import junk_string, correctly_resize
 
 from pdfminer.converter import PDFPageAggregator, TextConverter
 from pdfminer.layout import LAParams, LTChar, LTPage, LTTextBox, LTTextBoxHorizontal, LTTextBoxVertical
@@ -78,12 +78,7 @@ class PDFReader:
         assert end_page > start_page or start_page == end_page == 0, "wrong pages range"
         self.text = ''
         self.match_dict = {}
-
         self.__read_pdf(pdf_path)
-
-        warnings.warn('self.match_dict = self.reader.white_spaces ????')
-        warnings.warn('right now ignoring #.superior')
-
         self.__match_glyphs_and_encoding_for_all()
         fonts_match_dict = self.match_dict
         self.text = self.__restore_text(pdf_path, start=start_page, end=end_page)
@@ -166,12 +161,10 @@ class PDFReader:
 
     def __match_glyphs_and_encoding(self, images_path: Path):
 
-        # images_path = glob.glob(images_path + "/*")
         images = images_path.glob("*")
         dictionary = {}
         alphas = {}
         for img in images:
-            # key = img.split('\\')[-1].split('.')
             key = img.parts[-1].split('.')
             key = ''.join(key[:-1])
             pred = self.model.recognize_glyph(img)
@@ -233,11 +226,11 @@ class PDFReader:
                     char_set_arr = [q.name if isinstance(q, PSLiteral) else '' for q in encoding['Differences']]
                     cached_fonts[f.fontname] = char_set_arr
                 self.__cached_fonts = rsrcmgr._cached_fonts
-                self.walk_pdf(layout, cached_fonts, fulltext)
+                self.recursive_pdf_walk(layout, cached_fonts, fulltext)
         self.text = functions.remove_hyphenations(self.text)
         return self.text
 
-    def walk_pdf(self, o: Any, cached_fonts: dict, fulltext: str):
+    def recursive_pdf_walk(self, o: Any, cached_fonts: dict, fulltext: str):
         if isinstance(o, LTChar):
             char = o.get_text()
             match_dict_key = self.__fontname2basefont[o.fontname]
@@ -278,7 +271,7 @@ class PDFReader:
                 o._text = '□'
         elif isinstance(o, Iterable):
             for i in o:
-                self.walk_pdf(i, cached_fonts, fulltext)
+                self.recursive_pdf_walk(i, cached_fonts, fulltext)
 
         if isinstance(o, (LTTextBox, LTTextBoxVertical, LTTextBoxHorizontal)):
             text = o.get_text()

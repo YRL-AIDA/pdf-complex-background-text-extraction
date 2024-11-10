@@ -8,7 +8,7 @@ from icecream import ic
 
 from pdf_worker.pdf_reader import PDFReader
 from main import ROOT_DIR
-from utils.functions import collapse_text, remove_hyphenations
+from functions.functions import collapse_text, remove_hyphenations
 
 
 def compare_two_strings_with_orig(cnn_string: str, tabby_string: str, orig: str):
@@ -59,16 +59,3 @@ def compare_dedoc_and_cnn(pdfs_path, txts_path, reader: PDFReader):
 
         cnn_text = reader.restore_text(pdf_path, start_page=start_page, end_page=end_page)
         compare_two_strings_with_orig(cnn_string=cnn_text, tabby_string=tabby_text, orig=orig['text'])
-
-
-
-# create_json_with_copied_text("")
-# q = f'{ROOT_DIR}/qwerty'
-# ic(os.path.normpath("../data/check_pdf/3.pdf"))
-# ic(extract_text("../data/check_pdf/3.pdf", page_numbers=[0]))
-# create_json_with_copied_text("../data/check_pdf/12.pdf", pages=[2, 3])
-# ic(extract_text("../data/check_pdf/5.pdf", page_numbers=[1]))
-# print(ROOT_DIR)
-# from font_recognition import font_recognizer
-# fr = font_recognizer.FontRecognizer.load_default_model()
-# compare_dedoc_and_cnn("../data/check_pdf", "../data/jsons", fr)

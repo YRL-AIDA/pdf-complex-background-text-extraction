@@ -13,7 +13,7 @@ import tensorflow as tf
 
 import config
 from config import DefaultModel
-from utils.functions import get_project_root
+from functions.functions import get_project_root
 from keras.callbacks import TensorBoard
 
 
@@ -86,7 +86,7 @@ class Model:
         self.model.fit(train_ds, validation_data=val_ds, test_ds=test_ds, batch_size=batch_size, epochs=epochs, callbacks=[tensorboard])
         self.labels = train_ds.class_names
 
-        print(self.weights.layers[-1].output_shape)
+        print(self.model.layers[-1].output_shape)
 
     @staticmethod
     def __set_model(image_size: tuple, num_classes: int) -> keras.Sequential:

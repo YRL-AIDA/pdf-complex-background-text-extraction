@@ -9,7 +9,7 @@ from icecream import ic
 
 import splitfolders
 
-from utils import functions
+from functions import functions
 
 
 def create_dataset(dataset_name: str, fonts_path: Path, char_pool: list):
@@ -46,7 +46,6 @@ def __extract_glyphs(images_save_path: Path, fonts_path: Path, char_pool: list):
         os.makedirs(Path(images_save_path, str(ord(char))))
 
     counter = 0
-    # font_files = os.listdir(fonts_path)
     font_files = list(fonts_path.iterdir())
     warnings.filterwarnings("ignore", category=Warning)
     for font_file in font_files:
@@ -54,7 +53,8 @@ def __extract_glyphs(images_save_path: Path, fonts_path: Path, char_pool: list):
         font_file_path = fr'"{fonts_path}/{font_file}"'
         try:
             DEVNULL = open(os.devnull, 'wb')
-            result = subprocess.check_output(f"ffpython ../ffwrapper/fontforge_wrapper.py True {images_save_path} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
+            ffwrapper_path = config.folders.get('ffwraper_folder')
+            result = subprocess.check_output(f"ffpython {ffwrapper_path} True {images_save_path} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
         except:
             continue
         result = result.decode('utf-8')

@@ -1,7 +1,7 @@
 import glob
 import os
 from pathlib import Path
-from utils.functions import get_project_root
+from functions.functions import get_project_root
 
 from keras.models import load_model
 
@@ -66,7 +66,8 @@ folders = dict(
     extracted_glyphs_folder=Path(ROOT_DIR, "data/pdfdata/glyph_images"),
     default_models_folder=Path(ROOT_DIR, "data/models/default_models"),
     custom_models_folder=Path(ROOT_DIR, "data/models/custom_models"),
-    datasets_folder=Path(ROOT_DIR, 'data', 'datasets')
+    datasets_folder=Path(ROOT_DIR, 'data', 'datasets'),
+    ffwraper_folder=Path(ROOT_DIR, 'ffwrapper', 'fontforge_wrapper.py')
 )
 
 default_models = [i.split('\\')[-1].split('.')[0] for i in
