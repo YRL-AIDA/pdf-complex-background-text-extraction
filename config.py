@@ -97,4 +97,16 @@ class DefaultModel(enum.Enum):
     # English = {'model': load_model(Path(folders['default_models_folder'], 'eng_no_reg_diff.keras')),
     #            'labels': Language.English_no_reg_diff.value}
 
+    @classmethod
+    def from_string(cls, model_name: str):
+        mapping = {
+            "ruseng": cls.Russian_and_English,
+            # "rus": cls.Russian,
+            # "eng": cls.English
+        }
+        try:
+            return mapping[model_name.lower()]
+        except KeyError:
+            raise ValueError(f"Incorrect model_name (rus, eng, ruseng)")
+
 russian_words = set()

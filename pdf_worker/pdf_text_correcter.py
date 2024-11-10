@@ -28,7 +28,7 @@ import difflib
 
 from nltk.corpus import words
 
-from main import ROOT_DIR
+from root_dir_path import ROOT_DIR
 
 english_words = set(words.words())
 with open(f'{ROOT_DIR}/data/russian.txt') as f:

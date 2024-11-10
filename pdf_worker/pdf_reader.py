@@ -24,6 +24,7 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import resolve1
 from pdfminer.psparser import PSLiteral
+from typing import Union
 
 
 class PDFReader:
@@ -55,10 +56,12 @@ class PDFReader:
                 self.__need2correct = True
                 break
 
-
     @classmethod
-    def load_default_model(cls, default_model: config.DefaultModel = config.DefaultModel.Russian_and_English):
-        new_model = Model.load_default_model(default_model=default_model)
+    def load_default_model(cls, default_model: Union[config.DefaultModel, str] = config.DefaultModel.Russian_and_English):
+        if type(default_model) == config.DefaultModel:
+            new_model = Model.load_default_model(default_model=default_model)
+        else:
+            new_model = config.DefaultModel.from_string(default_model)
         new_model.default_model = default_model
         reader = cls(model=new_model)
         return reader

@@ -7,7 +7,7 @@ from Levenshtein import ratio
 from icecream import ic
 
 from pdf_worker.pdf_reader import PDFReader
-from main import ROOT_DIR
+from root_dir_path import ROOT_DIR
 from functions.functions import collapse_text, remove_hyphenations
 
 
