@@ -10,6 +10,7 @@
 *.ttc
 *.txt
 !requirements.txt
+!readme_imgs/*.png
 *.json
 *.keras
 *.xml
