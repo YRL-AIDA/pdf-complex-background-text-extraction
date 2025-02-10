@@ -36,8 +36,9 @@ def generate_images(save_path: Path, font_path: Path, index: int, uni_char_pool:
     return save_paths
 
 
+
 def generate_all_images(save_path: Path, font_path: Path) -> list:
-    font = fontforge.open(font_path)
+    font = fontforge.open(str(font_path))
     save_paths = []
     for name in font:
         try:
@@ -47,15 +48,19 @@ def generate_all_images(save_path: Path, font_path: Path) -> list:
                 continue
             try:
                 filename = str(ord(name)) + ".png"
-            except:
-                unicode_by_name = str(fontforge.unicodeFromName(name))
-                if unicode_by_name == '-1' and name == '.notdef':
-                    continue
 
-                if unicode_by_name == '-1':
-                    filename = name + ".png"
-                else:
-                    filename = unicode_by_name + '.png'
+            except:
+                try:
+                    filename = str(font[name].encoding) + ".png"
+                except:
+                    unicode_by_name = str(fontforge.unicodeFromName(name))
+                    if unicode_by_name == '-1' and name == '.notdef':
+                        continue
+
+                    if unicode_by_name == '-1':
+                        filename = name + ".png"
+                    else:
+                        filename = unicode_by_name + '.png'
             char_save_path = f"{save_path}/{filename}"
             if name == ".notdef" or filename == '-1.png':
                 continue
@@ -65,6 +70,38 @@ def generate_all_images(save_path: Path, font_path: Path) -> list:
             continue
     return save_paths
 
+
+# def generate_all_images(save_path: Path, font_path: Path) -> list:
+#     font = fontforge.open(str(font_path))
+#     save_paths = []
+#     for name in font:
+#         if name == 'uni041A' or name == 'ellipsis':
+#             x=1
+#         try:
+#             if 'superior' in name:
+#                 continue
+#             if not font[name].isWorthOutputting() and name != 'space':
+#                 continue
+#             try:
+#                 filename = str(ord(name)) + ".png"
+#
+#             except:
+#                 unicode_by_name = str(fontforge.unicodeFromName(name))
+#                 if unicode_by_name == '-1' and name == '.notdef':
+#                     continue
+#
+#                 if unicode_by_name == '-1':
+#                     filename = name + ".png"
+#                 else:
+#                     filename = unicode_by_name + '.png'
+#             char_save_path = f"{save_path}/{filename}"
+#             if name == ".notdef" or filename == '-1.png':
+#                 continue
+#             font[name].export(char_save_path, image_size)
+#             save_paths.append(char_save_path)
+#         except:
+#             continue
+#     return save_paths
 
 if __name__ == "__main__":
     args = sys.argv[1:]

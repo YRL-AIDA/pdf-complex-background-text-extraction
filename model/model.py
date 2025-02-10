@@ -67,7 +67,7 @@ class Model:
         tf_keras_model last layer should be dense(num_classes)
         """
         if dataset_path is None:
-            data_path = config.folders.get('last_prepared_data')
+            dataset_path = config.folders.get('last_prepared_data')
         assert dataset_path.exists(), "No data for train"
 
         assert len(next(os.walk(dataset_path))[1]) == 3, "should be 3 folders: train, val, test"

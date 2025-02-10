@@ -5,10 +5,11 @@ import re
 import shutil
 import subprocess
 import warnings
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import Any, Iterable
 
 import fitz
+import icecream
 
 import config
 from model.model import Model
@@ -25,7 +26,6 @@ from pdfminer.pdfparser import PDFParser
 from pdfminer.pdftypes import resolve1
 from pdfminer.psparser import PSLiteral
 from typing import Union
-
 
 class PDFReader:
     def __init__(self, model: Model):
@@ -58,11 +58,15 @@ class PDFReader:
 
     @classmethod
     def load_default_model(cls, default_model: Union[config.DefaultModel, str] = config.DefaultModel.Russian_and_English):
+        # assert default_model in
         if type(default_model) == config.DefaultModel:
+            print(1)
             new_model = Model.load_default_model(default_model=default_model)
         else:
             new_model = config.DefaultModel.from_string(default_model)
-        new_model.default_model = default_model
+        # new_model.default_model = default_model
+        new_model = Model.load_default_model(new_model)
+        print(new_model)
         reader = cls(model=new_model)
         return reader
 
@@ -138,29 +142,51 @@ class PDFReader:
             if not os.path.isdir(save_path):
                 os.makedirs(save_path)
             font_path = self.__fonts_path.joinpath(os.fsdecode(font_file))
+
+            save_path = str(save_path)
+            font_path = str(font_path)
+            ff_path = str(config.folders.get('ffwraper_folder'))
+
             warnings.warn('glyph#### how to parse')
-            result = subprocess.check_output(f"ffpython ../font_action/fontforge_wrapper.py False {save_path} {font_path}")
+            result = subprocess.check_output(f"ffpython {ff_path} False {save_path} {font_path}")
             result = result.decode('utf-8')
             result = set(ast.literal_eval(result))
+            icecream.ic(result)
             for img in result:
-                correctly_resize(img)
+                if functions.is_empty(img) and "png" in img:
+                    uni_whitespace = (PurePath(img).parts[-1]).split('.')[0]
+                    name_whitespace = ''
+                    try:
+                        name_whitespace = chr(int(uni_whitespace))
+                    except:
+                        name_whitespace = uni_whitespace
+                    finally:
+                        font_white_spaces[name_whitespace] = ' '
+                        os.remove(img)
+                else:
+                    correctly_resize(img)
             white_spaces[font_name] = font_white_spaces
         self.white_spaces = white_spaces
-        print("whitespaces", self.white_spaces)
+        icecream.ic(self.white_spaces)
 
     def __match_glyphs_and_encoding_for_all(self):
         extracted_fonts_folder = config.folders.get("extracted_fonts_folder")
-        fonts = glob.glob(extracted_fonts_folder + "/*")
+        print(extracted_fonts_folder)
+        fonts = extracted_fonts_folder.glob("*")
         dicts = {}
+        dicts = self.white_spaces
         for font_file in fonts:
-            fontname = font_file.split('\\')[-1]
-            font_name_images = fontname.split('.')[0]
-            font_name_images = font_name_images.split(junk_string)[0]
-            print("fontnameimgs", font_name_images)
-            matching_res = self.__match_glyphs_and_encoding(self.__glyphs_path.joinpath(font_name_images))
-            font_name_without_prefix = font_name_images.split('+')[1] if '+' in font_name_images else font_name_images
-            dicts[font_name_images] = matching_res if font_name_without_prefix not in dicts \
-                else matching_res | dicts[font_name_images.split('+')[1]]
+            fontname_with_ext = PurePath(font_file).parts[-1]
+            fontname = fontname_with_ext.split('.')[0]
+            fontname = fontname.split(junk_string)[0]
+            print("fontname", fontname)
+            matching_res = self.__match_glyphs_and_encoding(self.__glyphs_path.joinpath(fontname))
+            font_name_without_prefix = fontname.split('+')[1] if '+' in fontname else fontname
+            # dicts[fontname] = matching_res if font_name_without_prefix not in dicts else matching_res | dicts[fontname.split('+')[1]]
+            # dicts[fontname] = matching_res if fontname not in dicts else matching_res.update(dicts[fontname])
+            dicts[fontname].update(matching_res)
+        self.match_dict = dicts
+        icecream.ic(self.match_dict)
 
     def __match_glyphs_and_encoding(self, images_path: Path):
 
@@ -216,7 +242,8 @@ class PDFReader:
                     Exception('fonts should be dictionary, ti nepravilno napisal kod(')
                 for font_key, font_obj in fonts.items():
                     font_dict = resolve1(font_obj)
-                    encoding = resolve1(font_dict['Encoding'])
+                    # encoding = resolve1(font_dict['Encoding'])
+                    encoding = resolve1(font_dict.get("Encoding"))
                     f = rsrcmgr.get_font(objid=font_obj.objid, spec={'name': resolve1(font_obj)['BaseFont'].name})
                     self.__fontname2basefont[f.fontname] = f.basefont if hasattr(f, 'basefont') else f.fontname
 
@@ -231,6 +258,7 @@ class PDFReader:
                 self.__cached_fonts = rsrcmgr._cached_fonts
                 self.recursive_pdf_walk(layout, cached_fonts, fulltext)
         self.text = functions.remove_hyphenations(self.text)
+        print(self.white_spaces)
         return self.text
 
     def recursive_pdf_walk(self, o: Any, cached_fonts: dict, fulltext: str):
@@ -244,7 +272,7 @@ class PDFReader:
                     # o._text = '□'
                 except:
                     # o._text = char
-                    o._text = '□'
+                    o._text = '■'
                     return
                 return
             index = -1
@@ -271,7 +299,7 @@ class PDFReader:
                 o._text = self.match_dict[match_dict_key][glyph_name]
             except:
                 fulltext += char
-                o._text = '□'
+                o._text = '😈'
         elif isinstance(o, Iterable):
             for i in o:
                 self.recursive_pdf_walk(i, cached_fonts, fulltext)

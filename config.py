@@ -109,4 +109,6 @@ class DefaultModel(enum.Enum):
         except KeyError:
             raise ValueError(f"Incorrect model_name (rus, eng, ruseng)")
 
-russian_words = set()
+
+
+# russian_words = set()

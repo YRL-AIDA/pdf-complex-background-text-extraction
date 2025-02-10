@@ -9,10 +9,13 @@ from Levenshtein import distance
 # import editdistance as editdistance
 import numpy as np
 
-config = configparser.ConfigParser()
-config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
-config.read(config_p, encoding='utf-8')
-convertdictrus = eval(config.get("DEFAULT", "convert_chars_to_rus"))
+import config
+
+# config = configparser.ConfigParser()
+# config_p = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.ini')
+# config.read(config_p, encoding='utf-8')
+# convertdictrus = eval(config.get("DEFAULT", "convert_chars_to_rus"))
+convertdictrus = config.convert.get("convert_chars_to_rus")
 # convertdicteng = eval(config.get("DEFAULT", "convert_chars_to_eng"))
 convertdicteng = dict((v, k) for k, v in convertdictrus.items())
 

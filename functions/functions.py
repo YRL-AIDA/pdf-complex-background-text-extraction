@@ -9,6 +9,7 @@ from pdfminer.high_level import extract_text
 
 junk_string = "_junkstring"
 
+
 def correctly_resize(image_path, size: tuple = (28, 28)):
     im = Image.open(image_path)
     im.thumbnail((28, 28), Image.LANCZOS)
@@ -18,6 +19,17 @@ def correctly_resize(image_path, size: tuple = (28, 28)):
     new_image.paste(im, (x_offset, y_offset))
     new_image = PIL.ImageOps.invert(new_image)
     new_image.save(image_path)
+
+
+def is_empty(image_path) -> bool:
+    if not image_path.lower().endswith('.png'):
+        raise Exception("problems with extracted glyphs png path")
+    img = Image.open(image_path)
+    extrema = img.convert("L").getextrema()
+    empty_bool = False
+    if extrema == (0, 0) or extrema == (255, 255):
+        return True
+    return empty_bool
 
 
 def get_project_root() -> Path:
