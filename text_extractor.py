@@ -15,5 +15,3 @@ if __name__ == "__main__":
     parser.add_argument("model_name", help="Модель: rus, eng, ruseng")
     args = parser.parse_args()
     main(args.pdf_path, args.model_name)
-
-

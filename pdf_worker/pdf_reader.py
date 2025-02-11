@@ -60,13 +60,11 @@ class PDFReader:
     def load_default_model(cls, default_model: Union[config.DefaultModel, str] = config.DefaultModel.Russian_and_English):
         # assert default_model in
         if type(default_model) == config.DefaultModel:
-            print(1)
             new_model = Model.load_default_model(default_model=default_model)
         else:
             new_model = config.DefaultModel.from_string(default_model)
         # new_model.default_model = default_model
         new_model = Model.load_default_model(new_model)
-        print(new_model)
         reader = cls(model=new_model)
         return reader
 
@@ -115,7 +113,6 @@ class PDFReader:
                     continue
                 xref_visited.append(xref)
                 font = doc.extract_font(xref, named=True)
-                print(page_num, font['name'], font['ext'])
                 if font['ext'] != 'n/a':
                     # font_path = self.__fonts_path.joinpath(font['name'] + junk_string + str(junk) + '.' + font['ext'])
                     font_path = self.__fonts_path.joinpath(f"{font['name']}{junk_string}{str(junk)}.{font['ext']}")
@@ -134,10 +131,8 @@ class PDFReader:
         for font_file in font_files:
             font_white_spaces = {}
             font_name = os.fsdecode(font_file)
-            print("fontname", font_name)
             font_name = font_name.split('.')[0]
             font_name = re.split(junk_string, font_name)[0]
-            print("split", re.split(junk_string, font_name))
             save_path = self.__glyphs_path.joinpath(font_name)
             if not os.path.isdir(save_path):
                 os.makedirs(save_path)
@@ -155,28 +150,25 @@ class PDFReader:
             eval_list = list(ast.literal_eval(result))
             imgs_to_resize_set = set(eval_list[0])
             empty_glyphs = eval_list[1]
-            icecream.ic(result)
             for img in imgs_to_resize_set:
-                correctly_resize(img)
-                # if functions.is_empty(img) and "png" in img:
-                #     uni_whitespace = (PurePath(img).parts[-1]).split('.')[0]
-                #     name_whitespace = ''
-                #     try:
-                #         name_whitespace = chr(int(uni_whitespace))
-                #     except:
-                #         name_whitespace = uni_whitespace
-                #     finally:
-                #         font_white_spaces[name_whitespace] = ' '
-                #         os.remove(img)
-                # else:
-                #     correctly_resize(img)
+                # correctly_resize(img)
+                if functions.is_empty(img) and "png" in img:
+                    uni_whitespace = (PurePath(img).parts[-1]).split('.')[0]
+                    name_whitespace = ''
+                    try:
+                        name_whitespace = chr(int(uni_whitespace))
+                    except:
+                        name_whitespace = uni_whitespace
+                    finally:
+                        font_white_spaces[name_whitespace] = ' '
+                        os.remove(img)
+                else:
+                    correctly_resize(img)
             white_spaces[font_name] = empty_glyphs
         self.white_spaces = white_spaces
-        icecream.ic(self.white_spaces)
 
     def __match_glyphs_and_encoding_for_all(self):
         extracted_fonts_folder = config.folders.get("extracted_fonts_folder")
-        print(extracted_fonts_folder)
         fonts = extracted_fonts_folder.glob("*")
         dicts = {}
         dicts = self.white_spaces
@@ -184,14 +176,12 @@ class PDFReader:
             fontname_with_ext = PurePath(font_file).parts[-1]
             fontname = fontname_with_ext.split('.')[0]
             fontname = fontname.split(junk_string)[0]
-            print("fontname", fontname)
             matching_res = self.__match_glyphs_and_encoding(self.__glyphs_path.joinpath(fontname))
             font_name_without_prefix = fontname.split('+')[1] if '+' in fontname else fontname
             # dicts[fontname] = matching_res if font_name_without_prefix not in dicts else matching_res | dicts[fontname.split('+')[1]]
             # dicts[fontname] = matching_res if fontname not in dicts else matching_res.update(dicts[fontname])
             dicts[fontname].update(matching_res)
         self.match_dict = dicts
-        icecream.ic(self.match_dict)
 
     def __match_glyphs_and_encoding(self, images_path: Path):
 
@@ -263,7 +253,6 @@ class PDFReader:
                 self.__cached_fonts = rsrcmgr._cached_fonts
                 self.recursive_pdf_walk(layout, cached_fonts, fulltext)
         self.text = functions.remove_hyphenations(self.text)
-        print(self.white_spaces)
         return self.text
 
     def recursive_pdf_walk(self, o: Any, cached_fonts: dict, fulltext: str):
@@ -276,8 +265,8 @@ class PDFReader:
                     o._text = self.match_dict[match_dict_key][char]
                     # o._text = '□'
                 except:
-                    # o._text = char
-                    o._text = '■'
+                    o._text = char
+                    # o._text = '■'
                     return
                 return
             index = -1
@@ -296,7 +285,8 @@ class PDFReader:
                         o._text = self.match_dict[match_dict_key][char]
                         return
                 except:
-                    o._text = '□'
+                    # o._text = '□'
+                    o._text = char
                     return
             try:
                 glyph_name = cached_fonts[o.fontname][index]
@@ -304,7 +294,8 @@ class PDFReader:
                 o._text = self.match_dict[match_dict_key][glyph_name]
             except:
                 fulltext += char
-                o._text = '😈'
+                o._text = char
+                # o._text = '😈'
         elif isinstance(o, Iterable):
             for i in o:
                 self.recursive_pdf_walk(i, cached_fonts, fulltext)
