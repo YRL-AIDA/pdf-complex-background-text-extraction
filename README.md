@@ -127,6 +127,10 @@ Canadian center for cyber security |166| 92%| 91%|
 pip install -r requirments.txt
 ```
 
+### Загрузить txt со словами [russian.txt](https://disk.yandex.ru/d/iUR-jKutGpCzyg)
+
+сохранить по пути `data/`
+
 ## Извлечение текста
 
 Для извлечения текста открыть терминал в папке проекта и написать
