@@ -150,22 +150,27 @@ class PDFReader:
             warnings.warn('glyph#### how to parse')
             result = subprocess.check_output(f"ffpython {ff_path} False {save_path} {font_path}")
             result = result.decode('utf-8')
-            result = set(ast.literal_eval(result))
+            # result = set(ast.literal_eval(result))
+            # result = set(list(ast.literal_eval(result[0])))
+            eval_list = list(ast.literal_eval(result))
+            imgs_to_resize_set = set(eval_list[0])
+            empty_glyphs = eval_list[1]
             icecream.ic(result)
-            for img in result:
-                if functions.is_empty(img) and "png" in img:
-                    uni_whitespace = (PurePath(img).parts[-1]).split('.')[0]
-                    name_whitespace = ''
-                    try:
-                        name_whitespace = chr(int(uni_whitespace))
-                    except:
-                        name_whitespace = uni_whitespace
-                    finally:
-                        font_white_spaces[name_whitespace] = ' '
-                        os.remove(img)
-                else:
-                    correctly_resize(img)
-            white_spaces[font_name] = font_white_spaces
+            for img in imgs_to_resize_set:
+                correctly_resize(img)
+                # if functions.is_empty(img) and "png" in img:
+                #     uni_whitespace = (PurePath(img).parts[-1]).split('.')[0]
+                #     name_whitespace = ''
+                #     try:
+                #         name_whitespace = chr(int(uni_whitespace))
+                #     except:
+                #         name_whitespace = uni_whitespace
+                #     finally:
+                #         font_white_spaces[name_whitespace] = ' '
+                #         os.remove(img)
+                # else:
+                #     correctly_resize(img)
+            white_spaces[font_name] = empty_glyphs
         self.white_spaces = white_spaces
         icecream.ic(self.white_spaces)
 
