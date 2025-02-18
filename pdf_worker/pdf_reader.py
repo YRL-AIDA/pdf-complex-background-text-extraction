@@ -183,24 +183,34 @@ class PDFReader:
             dicts[fontname].update(matching_res)
         self.match_dict = dicts
 
-    def __match_glyphs_and_encoding(self, images_path: Path):
 
+    def __match_glyphs_and_encoding(self, images_path: Path):
         images = images_path.glob("*")
         dictionary = {}
         alphas = {}
-        for img in images:
-            key = img.parts[-1].split('.')
-            key = ''.join(key[:-1])
-            pred = self.model.recognize_glyph(img)
-            char = chr(int(pred))
-            try:
-                dictionary[chr(int(key))] = chr(int(pred))
-                k = chr(int(key))
-            except:
-                dictionary[key] = chr(int(pred))
-                k = key
-            if char.isalpha():
-                alphas.setdefault(char.lower(), []).append((img, k))
+        image_paths = [img for img in images]
+        batch_size = 32
+        num_batches = len(image_paths) // batch_size + (1 if len(image_paths) % batch_size != 0 else 0)
+        for batch_idx in range(num_batches):
+        # Разделяем изображения на батчи
+            batch_images = image_paths[batch_idx * batch_size:(batch_idx + 1) * batch_size]
+
+            # Получаем предсказания для батча
+            predictions = self.model.recognize_glyph(batch_images)
+
+            # Обрабатываем каждое изображение из батча
+            for img, pred in zip(batch_images, predictions):
+                key = img.parts[-1].split('.')
+                key = ''.join(key[:-1])
+                char = chr(int(pred))
+                try:
+                    dictionary[chr(int(key))] = chr(int(pred))
+                    k = chr(int(key))
+                except:
+                    dictionary[key] = chr(int(pred))
+                    k = key
+                if char.isalpha():
+                    alphas.setdefault(char.lower(), []).append((img, k))
 
         return dictionary
 

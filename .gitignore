@@ -17,3 +17,4 @@
 *.iml
 stuff.py
 venv
+*.v2

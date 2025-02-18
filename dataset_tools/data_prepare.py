@@ -25,7 +25,6 @@ def create_dataset(dataset_name: str, fonts_path: Path, char_pool: list):
     os.makedirs(dataset_save_path)
 
     images_path = Path(dataset_save_path, 'images')
-
     __extract_glyphs(images_path, fonts_path, char_pool)
 
     splitfolders.ratio(images_path, output=dataset_save_path, ratio=(0.7, 0.2, 0.1), move=False)

@@ -72,7 +72,8 @@ folders = dict(
 
 default_models = [i.split('\\')[-1].split('.')[0] for i in
                   glob.glob(os.path.join(folders.get('default_models_folder'), "*.h5"))]
-default_models_and_labels = {i: {"model_name": i + ".keras", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
+print(default_models)
+default_models_and_labels = {i: {"model_name": i + ".h5", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
                              i in default_models}
 
 
@@ -90,7 +91,7 @@ class Language(enum.Enum):
 
 
 class DefaultModel(enum.Enum):
-    Russian_and_English = {'model': load_model(Path(folders['default_models_folder'], 'rus_eng.keras')),
+    Russian_and_English = {'model': load_model(Path(folders['default_models_folder'], 'rus_eng.h5')),
                            'labels': Language.Russian_and_English.value}
     # Russian = {'model': load_model(Path(folders['default_models_folder'], 'rus_no_reg_diff.keras')),
     #            'labels': Language.Russian_no_reg_diff.value}
