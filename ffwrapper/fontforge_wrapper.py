@@ -9,7 +9,7 @@ image_size = 80
 
 def generate_images(save_path: Path, font_path: Path, index: int, uni_char_pool: list) -> list:
 
-    font = fontforge.open(font_path, 1)
+    font = fontforge.open(str(font_path), 1)
     save_paths = []
     for uni in uni_char_pool:
         uni = int(uni)
@@ -25,7 +25,7 @@ def generate_images(save_path: Path, font_path: Path, index: int, uni_char_pool:
             ##
         if glyph_name == -1:
             continue
-        char_save_path = save_path.joinpath(str(uni), f"{font.fontname}_{index}.png")
+        char_save_path = str(save_path.joinpath(str(uni), f"{font.fontname}_{index}.png"))
 
         try:
             font[int(uni)].export(char_save_path, image_size)

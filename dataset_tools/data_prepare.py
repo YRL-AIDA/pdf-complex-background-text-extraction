@@ -50,11 +50,11 @@ def __extract_glyphs(images_save_path: Path, fonts_path: Path, char_pool: list):
     warnings.filterwarnings("ignore", category=Warning)
     for font_file in font_files:
         font_name = os.fsdecode(font_file)
-        font_file_path = fr'"{fonts_path}/{font_file}"'
+        # font_file_path = fr'"{fonts_path}/{font_file}"'
         try:
             DEVNULL = open(os.devnull, 'wb')
             ffwrapper_path = config.folders.get('ffwraper_folder')
-            result = subprocess.check_output(f"ffpython {ffwrapper_path} True {images_save_path} {font_file_path} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
+            result = subprocess.check_output(f"ffpython {ffwrapper_path} True {images_save_path} {font_file} {counter} {' '.join(uni_char_pool)}", stderr=DEVNULL)
         except:
             continue
         result = result.decode('utf-8')
