@@ -7,6 +7,7 @@ import subprocess
 import warnings
 from pathlib import Path, PurePath
 from typing import Any, Iterable
+from sys import platform
 
 import fitz
 import icecream
@@ -143,10 +144,20 @@ class PDFReader:
             ff_path = str(config.folders.get('ffwraper_folder'))
 
             warnings.warn('glyph#### how to parse')
-            result = subprocess.check_output(f"ffpython {ff_path} False {save_path} {font_path}")
+            if platform == 'linux' or platform == 'linux2':
+                # result = subprocess.check_output(f"python {ff_path} False {save_path} {font_path}", shell=True)
+                # print(f'python {ff_path} balls')
+                print(f"fontforge {ff_path} False {save_path} {font_path}")
+                result = subprocess.check_output(f"fontforge -script {ff_path} False {save_path} {font_path}", shell=True)
+                # result = result.decode('utf-8')
+                print(result)
+                # cmd = ['fontforge', f'{ff_path}', 'False', f'{save_path}', f'{font_path}']
+                # print(cmd)
+                # proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+                # print(proc)
+            else:
+                result = subprocess.check_output(f"ffpython {ff_path} False {save_path} {font_path}")
             result = result.decode('utf-8')
-            # result = set(ast.literal_eval(result))
-            # result = set(list(ast.literal_eval(result[0])))
             eval_list = list(ast.literal_eval(result))
             imgs_to_resize_set = set(eval_list[0])
             empty_glyphs = eval_list[1]

@@ -73,8 +73,8 @@ folders = dict(
 default_models = [i.split('\\')[-1].split('.')[0] for i in
                   glob.glob(os.path.join(folders.get('default_models_folder'), "*.h5"))]
 print(default_models)
-default_models_and_labels = {i: {"model_name": i + ".h5", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
-                             i in default_models}
+# default_models_and_labels = {i: {"model_name": i + ".h5", "labels": sorted([str(ord(c)) for c in char_pool.get(i)])} for
+#                              i in default_models}
 
 
 def chars_to_code(char_list: list):
